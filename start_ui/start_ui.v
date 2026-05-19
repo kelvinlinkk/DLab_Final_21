@@ -1,5 +1,6 @@
 module start_ui(
     input clk,
+    input rst_n,
     input btnU,
     input btnC,
     input btnD,
@@ -25,14 +26,13 @@ module start_ui(
     localparam CHAR_I = 6'd1;
     localparam S_PLAYER   = 4'd0;
     localparam S_AI       = 4'd1;
-    localparam S_money_p1 = 4'd2;
-    
+    localparam S_money_p1 = 4'd2;    
     reg [3:0] state = S_PLAYER;
-    reg [1:0] player_count = 0;
-    reg [1:0] ai_level = 1;
+    reg [1:0] player_count = 2'd0;
+    reg [1:0] ai_level = 2'd1;
     reg [13:0] money_you_have = 14'd100;
     reg [9:0] money_you_bet = 10'd0;
-    reg reset = 0;  
+    reg rst_reg = 1'b0;
     wire [5:0] money_you_have_thousands;
     wire [5:0] money_you_have_hundreds;
     wire [5:0] money_you_have_tens;
@@ -50,25 +50,25 @@ module start_ui(
     assign money_you_bet_ones       = money_you_bet % 10'd10;
     always @(posedge clk)
     begin
-        if(reset)
+        if(rst_reg | !rst_n)
         begin
             money_you_have <= 14'd100;
             money_you_bet  <= 10'd0;
-            reset          <= 0;
+            rst_reg          <= 1'b0;
         end                
         case(state)
             S_PLAYER:
             begin
                 if(btnU)
                 begin
-                    if(player_count == 3)
-                        player_count <= 0;
+                    if(player_count == 2'd3)
+                        player_count <= 2'd0;
                     else
-                        player_count <= player_count + 1;
+                        player_count <= player_count + 2'd1;
                 end
                 if(btnC)
                 begin
-                    if(player_count == 0)
+                    if(player_count == 2'd0)
                         state <= S_AI;
                 end
             end
@@ -77,10 +77,10 @@ module start_ui(
             begin
                 if(btnU)
                 begin
-                    if(ai_level == 3)
-                        ai_level <= 1;
+                    if(ai_level == 2'd3)
+                        ai_level <= 2'd1;
                     else
-                        ai_level <= ai_level + 1;
+                        ai_level <= ai_level + 2'd1;
                 end
                 if(btnC)
                 begin
@@ -96,34 +96,38 @@ module start_ui(
             begin
                 if(btnU)
                 begin
-                    if((money_you_have >= money_you_bet + 10) && (money_you_bet + 10 <= 500))
+                    if((money_you_have >= {4'd0,money_you_bet} + 14'd10) && ({4'd0,money_you_bet} + 14'd10 <= 14'd500))
                     begin
-                        money_you_bet <= money_you_bet + 10; 
+                        money_you_bet <= money_you_bet + 10'd10; 
                     end   
                 end
                 if(btnD)
                 begin
-                    if(money_you_bet >= 10)
+                    if(money_you_bet >= 10'd10)
                     begin
-                        money_you_bet <= money_you_bet - 10;
+                        money_you_bet <= money_you_bet - 10'd10;
                     end
                 end
                 if(btnL)
                 begin
-                    if((money_you_have >= money_you_bet + 100) && (money_you_bet + 100 <= 500))
+                    if((money_you_have >= {4'd0,money_you_bet} + 14'd100) && ({4'd0,money_you_bet} + 14'd100 <= 14'd500))
                     begin
-                        money_you_bet <= money_you_bet + 100; 
+                        money_you_bet <= money_you_bet + 10'd100; 
                     end
                 end
                 if(btnR)
                 begin
                     state <= S_AI;
-                    reset <= 1;
+                    rst_reg <= 1'b1;
                 end 
                 if(btnC)
                 begin //start single player
 
                 end    
+            end
+            default:
+            begin
+                // default
             end
         endcase
     end
@@ -143,10 +147,10 @@ module start_ui(
             begin
                 d1 = CHAR_P;
                 case(player_count)
-                    0: d0 = NUM_1;
-                    1: d0 = NUM_2;
-                    2: d0 = NUM_3;
-                    3: d0 = NUM_4;
+                    2'd0: d0 = NUM_1;
+                    2'd1: d0 = NUM_2;
+                    2'd2: d0 = NUM_3;
+                    2'd3: d0 = NUM_4;
                 endcase
             end
             
@@ -155,19 +159,20 @@ module start_ui(
                 d3 = CHAR_A;
                 d2 = CHAR_I;
                 case(ai_level)
-                    1: d0 = NUM_1;
-                    2: d0 = NUM_2;
-                    3: d0 = NUM_3;
+                    2'd1: d0 = NUM_1;
+                    2'd2: d0 = NUM_2;
+                    2'd3: d0 = NUM_3;
+                    default: d0=NUM_1;
                 endcase
             end
             
             S_money_p1:
             begin
-                if(money_you_have_thousands == 0)
+                if(money_you_have_thousands == 6'd0)
                 begin
-                    if(money_you_have_hundreds == 0)
+                    if(money_you_have_hundreds == 6'd0)
                     begin
-                        if(money_you_have_tens == 0)
+                        if(money_you_have_tens == 6'd0)
                         begin
                             d7 = BLANK;
                             d6 = BLANK;
@@ -214,6 +219,10 @@ module start_ui(
                     d1 = money_you_bet_tens;
                     d0 = money_you_bet_ones;
                 end
+            end
+            default:
+            begin
+                // default
             end
         endcase
     end

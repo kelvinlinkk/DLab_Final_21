@@ -1,5 +1,6 @@
 module start_ui_top(
-    input clk,
+    input sys_clk,
+    input sys_rst_n,
     input btnU,
     input btnC,
     input btnD,
@@ -10,10 +11,15 @@ module start_ui_top(
 );
     wire clk_scan;
     wire clk_slow;
-    clock_divider clkdiv(
-        .clk(clk),
-        .clk_scan(clk_scan),
-        .clk_slow(clk_slow)
+    clk_divider #(.CNT_MAX(32'd50000)) clk_div_scan(
+        .clk(sys_clk),
+        .rst_n(sys_rst_n),
+        .clk_div(clk_scan)
+    );
+    clk_divider #(.CNT_MAX(32'd500000)) clk_div_slow(
+        .clk(sys_clk),
+        .rst_n(sys_rst_n),
+        .clk_div(clk_slow)
     );
     wire pulseU;
     wire pulseC;
@@ -55,6 +61,7 @@ module start_ui_top(
     wire [5:0] d7;
     start_ui startui(
         .clk(clk_slow),
+        .rst_n(sys_rst_n),
         .btnU(pulseU),
         .btnC(pulseC),
         .btnD(pulseD),
@@ -71,6 +78,7 @@ module start_ui_top(
     );
     segment_decoder segdecoder(
         .clk(clk_scan),
+        .rst_n(sys_rst_n),
         .d0(d0),
         .d1(d1),
         .d2(d2),

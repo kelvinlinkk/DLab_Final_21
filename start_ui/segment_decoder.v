@@ -1,5 +1,6 @@
 module segment_decoder(
     input clk,
+    input rst_n,
     input [5:0] d0,
     input [5:0] d1,
     input [5:0] d2,
@@ -11,11 +12,14 @@ module segment_decoder(
     output reg [7:0] seg,
     output reg [7:0] an
 );
-    reg [2:0] scan = 0;
+    reg [2:0] scan = 3'd0;
     reg [5:0] current;
-    always @(posedge clk)
+    always @(posedge clk or negedge rst_n)
     begin
-        scan <= scan + 1;
+        if(!rst_n)
+            scan <= 3'd0;
+        else
+            scan <= scan + 3'd1;
     end
     always @(*)
     begin

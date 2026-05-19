@@ -1,28 +1,23 @@
-module clock_divider(
+module clk_divider(
     input clk,
-    output reg clk_scan = 0,
-    output reg clk_slow = 0
+    input rst_n,
+    output reg clk_div = 1'b0
 );
-    reg [31:0] cnt_scan = 0;
-    reg [31:0] cnt_slow = 0;
-    always @(posedge clk)
+    parameter  CNT_MAX =  32'd50000;
+    reg [31:0] cnt_div = 32'd0;
+    always @(posedge clk or negedge rst_n)
     begin
-        if(cnt_scan == 32'd50000)
+        if(!rst_n)
         begin
-            cnt_scan <= 0;
-            clk_scan <= ~clk_scan;
+            clk_div<=1'b0;
+            cnt_div<=32'd0;
+        end
+        else if(cnt_div == CNT_MAX)
+        begin
+            cnt_div <= 32'd0;
+            clk_div <= ~clk_div;
         end
         else
-            cnt_scan <= cnt_scan + 1;
-    end
-    always @(posedge clk)
-    begin
-        if(cnt_slow == 32'd500000)
-        begin
-            cnt_slow <= 0;
-            clk_slow <= ~clk_slow;
-        end
-        else
-            cnt_slow <= cnt_slow + 1;
+            cnt_div <= cnt_div + 32'd1;
     end
 endmodule
