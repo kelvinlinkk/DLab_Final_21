@@ -3,6 +3,8 @@ module start_ui_top(
     input btnU,
     input btnC,
     input btnD,
+    input btnR,
+    input btnL,
     output [7:0] seg,
     output [7:0] an
 );
@@ -16,6 +18,8 @@ module start_ui_top(
     wire pulseU;
     wire pulseC;
     wire pulseD;
+    wire pulseR;
+    wire pulseL;
     press_button bU(
         .clk(clk_slow),
         .btn(btnU),
@@ -31,6 +35,16 @@ module start_ui_top(
         .btn(btnD),
         .pulse(pulseD)
     );
+    press_button bR(
+        .clk(clk_slow),
+        .btn(btnR),
+        .pulse(pulseR)
+    );
+    press_button bL(
+        .clk(clk_slow),
+        .btn(btnL),
+        .pulse(pulseL)
+    );
     wire [5:0] d0;
     wire [5:0] d1;
     wire [5:0] d2;
@@ -44,6 +58,8 @@ module start_ui_top(
         .btnU(pulseU),
         .btnC(pulseC),
         .btnD(pulseD),
+        .btnR(pulseR),
+        .btnL(pulseL),
         .d0(d0),
         .d1(d1),
         .d2(d2),
