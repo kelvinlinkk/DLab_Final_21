@@ -10,6 +10,14 @@ module start_ui_top(
     output [7:0] seg,
     output [7:0] an
 );
+    reg [3:0] state=init;
+    localparam init = 4'b0000;
+    localparam start_host = 4'b0001;
+    localparam start_guest = 4'b0010;
+    localparam game_host = 4'b0011;
+    localparam game_guest = 4'b0100;
+
+
     wire clk_scan;
     wire clk_slow;
     clk_divider #(.CNT_MAX(32'd50000)) clk_div_scan(
@@ -29,25 +37,45 @@ module start_ui_top(
     wire pulseL;
     reg ishost=0;
     reg startstartui=0;
-    reg ui_active=0;
     always @(posedge clk_slow or negedge sys_rst_n) begin
         if (!sys_rst_n) begin
             startstartui <= 1'b0;
             ishost       <= 1'b0;
-            ui_active    <= 1'b0;
+            state<=init;
         end else begin
-            startstartui <= 1'b0; 
-            if (!ui_active) begin
-                ishost <= SW15;
-                if (pulseC) begin
-                    startstartui <= 1'b1; // Trigger sub-module
-                    ui_active    <= 1'b1; // Move state out of menu
+            case(state)
+            init:
+            begin
+                if(pulseC & SW15)begin
+                startstartui<=1'b1;
+                state<=start_host;
                 end
-            end else begin
-                if ((backtogh_h)||(backtogh_p)) begin
-                    ui_active <= 1'b0; // Return control to host menu
+                if(pulseC & !SW15)begin
+                startstartui<=1'b1;
+                state<=start_guest;
                 end
             end
+            start_host:
+            begin
+                startstartui <= 1'b0;
+                if(backtogh_h)
+                begin
+                    state<=game_host;
+                end
+            end
+            start_guest:
+            begin
+                startstartui <= 1'b0;
+                if(backtogh_p)
+                begin
+                    state<=start_guest;
+                end
+            end
+            default:
+            begin
+                state<=init;
+            end
+            endcase
         end
     end
     press_button bU(
