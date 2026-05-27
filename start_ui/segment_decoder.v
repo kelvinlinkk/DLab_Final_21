@@ -99,6 +99,7 @@ module segment_decoder(
             23: seg = 8'b10001100;//P
             24: seg = 8'b01000000;//Q
             26: seg = 8'b10010010;//S
+            27: seg = 8'b11111000;//T
             28: seg = 8'b11000001;//U
             32: seg = 8'b10010001;//Y
             34: seg = 8'b11111111;//blank

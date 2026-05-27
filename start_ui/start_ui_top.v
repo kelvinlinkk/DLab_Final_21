@@ -1,6 +1,7 @@
 module start_ui_top(
     input sys_clk,
     input sys_rst_n,
+    input SW15,
     input btnU,
     input btnC,
     input btnD,
@@ -26,6 +27,29 @@ module start_ui_top(
     wire pulseD;
     wire pulseR;
     wire pulseL;
+    reg ishost=0;
+    reg startstartui=0;
+    reg ui_active=0;
+    always @(posedge clk_slow or negedge sys_rst_n) begin
+        if (!sys_rst_n) begin
+            startstartui <= 1'b0;
+            ishost       <= 1'b0;
+            ui_active    <= 1'b0;
+        end else begin
+            startstartui <= 1'b0; 
+            if (!ui_active) begin
+                ishost <= SW15;
+                if (pulseC) begin
+                    startstartui <= 1'b1; // Trigger sub-module
+                    ui_active    <= 1'b1; // Move state out of menu
+                end
+            end else begin
+                if ((backtogh_h)||(backtogh_p)) begin
+                    ui_active <= 1'b0; // Return control to host menu
+                end
+            end
+        end
+    end
     press_button bU(
         .clk(clk_slow),
         .btn(btnU),
@@ -59,7 +83,20 @@ module start_ui_top(
     wire [5:0] d5;
     wire [5:0] d6;
     wire [5:0] d7;
-    start_ui startui(
+    wire backtogh_h;
+    wire backtogh_p;
+    wire [3:0] state_h;
+    wire [3:0] state_p;
+    wire [2:0] player_count;
+    wire [1:0] ai_level;
+    wire [5:0] money_you_have_thousands;
+    wire [5:0] money_you_have_hundreds;
+    wire [5:0] money_you_have_tens;
+    wire [5:0] money_you_have_ones;    
+    wire [5:0] money_you_bet_hundreds;
+    wire [5:0] money_you_bet_tens;
+    wire [5:0] money_you_bet_ones;
+    start_ui_host startui_h(
         .clk(clk_slow),
         .rst_n(sys_rst_n),
         .btnU(pulseU),
@@ -67,6 +104,46 @@ module start_ui_top(
         .btnD(pulseD),
         .btnR(pulseR),
         .btnL(pulseL),
+        .ishost(ishost),
+        .startstartui(startstartui),
+        .backtogh_h(backtogh_h),
+        .state_h(state_h),
+        .player_count(player_count),
+        .ai_level(ai_level)
+    );
+    start_ui_player startui_p(
+        .clk(clk_slow),
+        .rst_n(sys_rst_n),
+        .btnU(pulseU),
+        .btnC(pulseC),
+        .btnD(pulseD),
+        .btnR(pulseR),
+        .btnL(pulseL),
+        .ishost(ishost),
+        .startstartui(startstartui),
+        .backtogh_p(backtogh_p),
+        .state_p(state_p),
+        .money_you_have_thousands(money_you_have_thousands),
+        .money_you_have_hundreds(money_you_have_hundreds),
+        .money_you_have_tens(money_you_have_tens),
+        .money_you_have_ones(money_you_have_ones),    
+        .money_you_bet_hundreds(money_you_bet_hundreds),
+        .money_you_bet_tens(money_you_bet_tens),
+        .money_you_bet_ones(money_you_bet_ones)
+    );
+    before_sevenseg segchoser(
+        .state_p(state_p),
+        .state_h(state_h),
+        .ishost(ishost),
+        .player_count(player_count),
+        .ai_level(ai_level),
+        .money_you_have_thousands(money_you_have_thousands),
+        .money_you_have_hundreds(money_you_have_hundreds),
+        .money_you_have_tens(money_you_have_tens),
+        .money_you_have_ones(money_you_have_ones),    
+        .money_you_bet_hundreds(money_you_bet_hundreds),
+        .money_you_bet_tens(money_you_bet_tens),
+        .money_you_bet_ones(money_you_bet_ones),
         .d0(d0),
         .d1(d1),
         .d2(d2),
