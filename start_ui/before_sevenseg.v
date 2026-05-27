@@ -1,6 +1,5 @@
 module before_sevenseg(
-    input [3:0] state_p,
-    input [3:0] state_h,
+    input [3:0] state,
     input ishost,
     input [2:0] player_count,
     input [1:0] ai_level,
@@ -33,7 +32,7 @@ module before_sevenseg(
     localparam S_IDLE     = 4'd0;
     localparam S_money_p1 = 4'd1;
     localparam S_PLAYER   = 4'd1;
-    localparam S_AI       = 4'd2;
+    localparam S_AI       = 4'b0101;
     
     always @(*)
     begin
@@ -45,9 +44,10 @@ module before_sevenseg(
         d5 = BLANK;
         d6 = BLANK;
         d7 = BLANK;
-        
-        if((state_h==S_IDLE)&&(state_p==S_IDLE))
-        begin
+
+        case(state)
+            S_IDLE:
+            begin
                 if (ishost) begin
                     d3 = 6'd17;
                     d2 = 6'd0;
@@ -59,9 +59,23 @@ module before_sevenseg(
                     d1 = 6'd10;
                     d0 = 6'd32;
                 end  
-        end     
-        case(state_p)     
-            S_money_p1:
+            end    
+            
+            4'b0001:
+            begin
+                d1 = CHAR_P;
+                case(player_count)
+                    3'd0: d0 = NUM_0;
+                    3'd1: d0 = NUM_1;
+                    3'd2: d0 = NUM_2;
+                    3'd3: d0 = NUM_3;
+                    3'd4: d0 = NUM_4;
+                    default:begin
+                        d0 = NUM_0;
+                    end
+                endcase
+            end 
+            4'b0010:
             begin
                 if(money_you_have_thousands == 6'd0)
                 begin
@@ -114,24 +128,7 @@ module before_sevenseg(
                     d1 = money_you_bet_tens;
                     d0 = money_you_bet_ones;
                 end
-            end
-            default:
-            begin
-                // default
-            end
-        endcase
-        case(state_h)           
-            S_PLAYER:
-            begin
-                d1 = CHAR_P;
-                case(player_count)
-                    3'd0: d0 = NUM_0;
-                    3'd1: d0 = NUM_1;
-                    3'd2: d0 = NUM_2;
-                    3'd3: d0 = NUM_3;
-                    3'd4: d0 = NUM_4;
-                endcase
-            end
+            end    
             
             S_AI:
             begin

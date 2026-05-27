@@ -16,6 +16,7 @@ module start_ui_top(
     localparam start_guest = 4'b0010;
     localparam game_host = 4'b0011;
     localparam game_guest = 4'b0100;
+    localparam start_ai = 4'b0101;
 
 
     wire clk_scan;
@@ -35,41 +36,56 @@ module start_ui_top(
     wire pulseD;
     wire pulseR;
     wire pulseL;
-    reg ishost=0;
-    reg startstartui=0;
+    reg ishost=1'b0;
+    wire startstartui = (state == start_host || state == start_guest) && !backtogh_h && !backtogh_p;
     always @(posedge clk_slow or negedge sys_rst_n) begin
         if (!sys_rst_n) begin
-            startstartui <= 1'b0;
             ishost       <= 1'b0;
             state<=init;
         end else begin
             case(state)
             init:
             begin
+                ishost <= SW15;
                 if(pulseC & SW15)begin
-                startstartui<=1'b1;
                 state<=start_host;
                 end
                 if(pulseC & !SW15)begin
-                startstartui<=1'b1;
                 state<=start_guest;
                 end
             end
             start_host:
             begin
-                startstartui <= 1'b0;
+                if(backtogh_h)
+                begin
+                    state<=game_host;
+                end
+                if(pulseC & !backtogh_h)
+                begin
+                    state<=start_ai;
+                end
+            end
+            start_guest:
+            begin
+                if(backtogh_p)
+                begin
+                    state<=game_guest;
+                end
+            end
+            start_ai:
+            begin
                 if(backtogh_h)
                 begin
                     state<=game_host;
                 end
             end
-            start_guest:
+            game_host:
             begin
-                startstartui <= 1'b0;
-                if(backtogh_p)
-                begin
-                    state<=start_guest;
-                end
+            state<=init;
+            end
+            game_guest:
+            begin
+            state<=init;
             end
             default:
             begin
@@ -113,8 +129,6 @@ module start_ui_top(
     wire [5:0] d7;
     wire backtogh_h;
     wire backtogh_p;
-    wire [3:0] state_h;
-    wire [3:0] state_p;
     wire [2:0] player_count;
     wire [1:0] ai_level;
     wire [5:0] money_you_have_thousands;
@@ -135,7 +149,7 @@ module start_ui_top(
         .ishost(ishost),
         .startstartui(startstartui),
         .backtogh_h(backtogh_h),
-        .state_h(state_h),
+        .state_h(),
         .player_count(player_count),
         .ai_level(ai_level)
     );
@@ -150,7 +164,7 @@ module start_ui_top(
         .ishost(ishost),
         .startstartui(startstartui),
         .backtogh_p(backtogh_p),
-        .state_p(state_p),
+        .state_p(),
         .money_you_have_thousands(money_you_have_thousands),
         .money_you_have_hundreds(money_you_have_hundreds),
         .money_you_have_tens(money_you_have_tens),
@@ -160,8 +174,7 @@ module start_ui_top(
         .money_you_bet_ones(money_you_bet_ones)
     );
     before_sevenseg segchoser(
-        .state_p(state_p),
-        .state_h(state_h),
+        .state(state),
         .ishost(ishost),
         .player_count(player_count),
         .ai_level(ai_level),

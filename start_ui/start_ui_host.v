@@ -42,6 +42,7 @@ module start_ui_host(
 
             case(state_h)
                 S_IDLE: begin
+                    backtogh_h <= 1'b0;
                     if (startstartui) begin
                         if (ishost) begin
                             state_h <= S_PLAYER;
@@ -55,6 +56,10 @@ module start_ui_host(
                     end
                     if (btnC) begin
                         if (player_count == 3'd0) state_h <= S_AI;
+                        else begin
+                            backtogh_h <= 1'b1;
+                            state_h    <= S_IDLE;
+                        end
                     end
                     if (btnR) begin
                         backtogh_h <= 1'b1;
@@ -68,7 +73,8 @@ module start_ui_host(
                         else ai_level <= ai_level + 2'd1;
                     end
                     if (btnC) begin
-                            //start game for a host and ai player
+                        backtogh_h <= 1'b1;
+                        state_h    <= S_IDLE;
                     end
                     if (btnR) begin
                         state_h <= S_PLAYER;
