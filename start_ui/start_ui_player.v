@@ -45,10 +45,10 @@ module start_ui_player(
   localparam S_IDLE          = 4'd10;
   localparam S_money_p1      = 4'd11;
 
-  reg rst_reg = 1'd0; // 已移除重複宣告
+  reg rst_reg = 1'd0;
   
   // player info
-  reg [3:0] cards [0:4]; // 修正陣列大小為 0:4 (共5張)
+  reg [3:0] cards [0:4];
   reg [13:0] money_you_have = 14'd1000;
   reg [9:0] money_you_bet = 10'd0;
   reg [13:0] money_after_insurance; 
@@ -228,6 +228,11 @@ module start_ui_player(
         end
 
         card_get_2: begin
+          if(btnU) tx <= 8'b10000011; 
+          if(btnD) begin
+            tx    <= 8'b10000010; 
+            state <= wait_host;
+          end
           shift <= {shift[1:0], rx[7]}; 
           if(shift[2:1] == 2'b01) begin
             cards[2] <= rx[3:0];
@@ -281,12 +286,12 @@ module start_ui_player(
 
         game_over1: begin
           if (there_is_host_ace && insurance_yn) begin
-              if (host_card != 5'd21) begin // 莊家沒21點，沒收保險金 (主注的一半)
+              if (host_card != 5'd21) begin 
                   if (money_you_have > {5'd0, money_you_bet[9:1]})
                       money_after_insurance <= money_you_have - {5'd0, money_you_bet[9:1]};
                   else
                       money_after_insurance <= 14'd0;
-              end else begin // 莊家有21點，保險理賠
+              end else begin 
                   money_after_insurance <= money_you_have + {5'd0, money_you_bet[9:1]};
               end
           end else begin
@@ -296,33 +301,32 @@ module start_ui_player(
         end
       
         game_over2: begin
-          // B. 主注輸贏結算邏輯
-          if (player_sum > 6'd21) begin // 玩家爆牌
+          if (player_sum > 6'd21) begin 
               lose_win <= 2'd1;
               if (money_after_insurance < {4'd0, money_you_bet})
                   money_you_have <= 14'd0;
               else
                   money_you_have <= money_after_insurance - {4'd0, money_you_bet};
           end
-          else if (host_card > 5'd21) begin // 莊家爆牌
+          else if (host_card > 5'd21) begin 
               lose_win <= 2'd3;
               if ((money_after_insurance + {4'd0, money_you_bet}) > 14'd9999)
                   money_you_have <= 14'd9999;
               else
                   money_you_have <= money_after_insurance + {4'd0, money_you_bet};
           end
-          else if (host_card > player_sum) begin // 莊家大
+          else if (host_card > player_sum) begin 
               lose_win <= 2'd1;
               if (money_after_insurance < {4'd0, money_you_bet})
                   money_you_have <= 14'd0;
               else
                   money_you_have <= money_after_insurance - {4'd0, money_you_bet};
           end
-          else if (host_card == player_sum) begin // 平手
+          else if (host_card == player_sum) begin 
               lose_win       <= 2'd2;
               money_you_have <= money_after_insurance;
           end
-          else begin // 玩家大
+          else begin 
               lose_win <= 2'd3;
               if ((money_after_insurance + {4'd0, money_you_bet}) > 14'd9999)
                   money_you_have <= 14'd9999;

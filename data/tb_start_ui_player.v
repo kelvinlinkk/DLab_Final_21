@@ -135,49 +135,55 @@ module tb_start_ui_player();
         #(CLK_PERIOD * 10);
         send_uart_byte(8'b0000_0000); // 傳送 Clear Byte 歸零 rx[7]
 
-        // 8. 莊家發 Card 0 給玩家 (值為 10)
+        // ---------------------------------------------------------
+        // 8. 莊家發 Card 0 (Value 10)
+        // ---------------------------------------------------------
         send_uart_byte(8'b1000_1010); 
-        wait (state != 4'd3); // 等待跳轉出 card_get_0
-        send_uart_byte(8'b0000_0000); // CLEAR BYTE
+        #(CLK_PERIOD * 100); 
+        
+        send_uart_byte(8'b0000_0000); // 傳送 CLEAR BYTE 重置 UART 狀態
 
-        // 9. 莊家發 Card 1 給玩家 (值為 9)
+        // ---------------------------------------------------------
+        // 9. 莊家發 Card 1 (Value 9)
+        // ---------------------------------------------------------
         send_uart_byte(8'b1000_1001); 
-        wait (state != 4'd4); // 等待跳轉出 card_get_1
-        send_uart_byte(8'b0000_0000); // CLEAR BYTE
+        #(CLK_PERIOD * 100); 
         
-        // 10. 莊家發 Card 2 給玩家 (因為你的程式強制收三張牌才進 card_get_3)
-        send_uart_byte(8'b1000_0000); // 假設這張牌值為 0
+        // ---------------------------------------------------------
+        // 10. ★ 關鍵修改處 ★ 等待進入 card_get_2 (State 5) 準備做決定
+        // ---------------------------------------------------------
+        wait (state == 4'd5); 
+        #(CLK_PERIOD * 100); 
         
-        // 等待進入 card_get_3 (State 6)，此時才允許按 btnD 停牌
-        wait (state == 4'd6); 
-        #(CLK_PERIOD * 10); 
-        
-        // 玩家按下 btnD 停牌 (Stand)
+        // 玩家決定停牌 (Stand)，按下 btnD (不拿第三張牌)
         btnD = 1; #(CLK_PERIOD * 5);
         btnD = 0; #(CLK_PERIOD * 5);
 
-        // 等待 FSM 進入 wait_host (State 8)
+        // 按下 btnD 後，等待 FSM 進入 wait_host (State 8)
         wait (state == 4'd8);
-        #(CLK_PERIOD * 10);
+        #(CLK_PERIOD * 100);
 
-        // 11. 莊家開牌並送出最終點數總和 (18點 -> 5'd18)
-        send_uart_byte(8'b0000_0000); // CLEAR BYTE
-        send_uart_byte(8'b1010_0100); 
+        // ---------------------------------------------------------
+        // 11. 莊家發送最終點數 (Value 18)
+        // ---------------------------------------------------------
+        send_uart_byte(8'b0000_0000); // 先清空
+        send_uart_byte(8'b1001_0010); // 18 = 0x12
+        #(CLK_PERIOD * 100);
 
-        // 12. 讓 FSM 去跑結算邏輯 (game_over1 -> game_over2)
-        // 最後等待它回到下注畫面 (S_money_p1 / State 11)
-        wait (state == 4'd11); 
+        // ---------------------------------------------------------
+        // 12. 等待遊戲結算完畢回到 S_money_p1 (State 11)
+        // ---------------------------------------------------------
+        wait (state == 4'd11);
+        #(CLK_PERIOD * 100);
 
-        // 印出最終贏錢結果
-        $display("==================================================");
-        $display("Simulation Complete!");
-        $display("Final Money: %d%d%d%d", money_you_have_thousands, money_you_have_hundreds, money_you_have_tens, money_you_have_ones);
-        if (lose_win == 2'd3) $display("Result: PLAYER WINS!");
-        else if (lose_win == 2'd1) $display("Result: PLAYER LOSES!");
-        else $display("Result: PUSH (TIE)");
-        $display("==================================================");
+        // 印出最終結果
+        $display("Final Money: %d %d %d %d", money_you_have_thousands, money_you_have_hundreds, money_you_have_tens, money_you_have_ones);
+        if (lose_win == 2'd1) $display("Result: PLAYER LOSES");
+        else if (lose_win == 2'd2) $display("Result: PUSH (TIE)");
+        else if (lose_win == 2'd3) $display("Result: PLAYER WINS!");
 
-        $finish;
+        #(CLK_PERIOD * 100);
+        $finish; // <--- 這行會強制停止模擬！
     end
 
 endmodule
