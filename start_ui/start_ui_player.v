@@ -70,12 +70,15 @@ module start_ui_player(
 
   // receiver and transmitter
   wire [7:0] rx_wire;
+  wire rx_valid;
   reg [7:0] rx = 8'd0;
+  reg rx_valid_reg = 1'b0;
   rx rx_0(
        .clk(clk),
        .rst_n(rst_n),
        .signal_in(signal_in),
-       .out(rx_wire)
+       .out(rx_wire),
+       .valid(rx_valid)
      );
     
   reg [7:0] tx = 8'd0;
@@ -145,6 +148,7 @@ module start_ui_player(
       backtogh_p <= 1'b0;
       tx         <= 8'b0;
       rx         <= rx_wire;
+      rx_valid_reg <= rx_valid;
 
       case(state)
         S_IDLE: begin
@@ -189,7 +193,7 @@ module start_ui_player(
           if(shift[0] == 1'b1) begin
             host_ace_reg <= rx[0];
           end
-          if(shift[2:1] == 2'b01) begin
+          if(rx_valid_reg) begin
             if(host_ace_reg == 1'b1) begin
               there_is_host_ace <= 1'd1;
               state             <= insurance;
@@ -213,7 +217,7 @@ module start_ui_player(
 
         card_get_0: begin
           shift <= {shift[1:0], rx[7]}; 
-          if(shift[2:1] == 2'b01) begin
+          if(rx_valid_reg) begin
             cards[0] <= rx[3:0];
             state    <= card_get_1;
           end
@@ -221,49 +225,49 @@ module start_ui_player(
 
         card_get_1: begin
           shift <= {shift[1:0], rx[7]}; 
-          if(shift[2:1] == 2'b01) begin
+          if(rx_valid_reg) begin
             cards[1] <= rx[3:0];
             state    <= card_get_2;
           end
         end
 
         card_get_2: begin
-          if(btnU) tx <= 8'b10000011; 
+          if(btnU) tx <= 8'b00000001; 
           if(btnD) begin
-            tx    <= 8'b10000010; 
+            tx    <= 8'b00000010; 
             state <= wait_host;
           end
           shift <= {shift[1:0], rx[7]}; 
-          if(shift[2:1] == 2'b01) begin
+          if(rx_valid_reg) begin
             cards[2] <= rx[3:0];
             state    <= card_get_3;
           end
         end
 
         card_get_3: begin
-          if(btnU) tx <= 8'b10000011; 
+          if(btnU) tx <= 8'b00000001; 
           if(btnD) begin
-            tx    <= 8'b10000010; 
+            tx    <= 8'b00000010; 
             state <= wait_host;
           end
           shift <= {shift[1:0], rx[7]}; 
-          if(shift[2:1] == 2'b01) begin
+          if(rx_valid_reg) begin
             cards[3] <= rx[3:0];
             state    <= card_get_4;
           end
         end
 
         card_get_4: begin
-          if(btnU) tx <= 8'b10000011;
+          if(btnU) tx <= 8'b00000001;
           if(btnD) begin
-            tx    <= 8'b10000010;
+            tx    <= 8'b00000010;
             state <= wait_host;
           end
           if(btnL) card_left_right <= 1'd0;
           if(btnR) card_left_right <= 1'd1;
 
           shift <= {shift[1:0], rx[7]}; 
-          if(shift[2:1] == 2'b01) begin
+          if(rx_valid_reg) begin
             cards[4]        <= rx[3:0];
             card_left_right <= 1'd0;
             state           <= wait_host;
@@ -279,7 +283,7 @@ module start_ui_player(
           if(shift[0] == 1'b1) begin
             host_card <= rx[5:1];
           end
-          if(shift[2:1] == 2'b01) begin
+          if(rx_valid_reg) begin
             state <= game_over1;
           end
         end

@@ -2,7 +2,9 @@ module rx(
     input clk,
     input rst_n,
     input signal_in,
-    output reg [7:0] out
+    output reg [7:0] out,
+    output reg valid
+
 );
     parameter BAUD_LIMIT = 32'd10416; // 9600 bps
     parameter HALF_BAUD = 32'd5208;   // 確保在資料的正中間取樣
@@ -15,6 +17,7 @@ module rx(
     reg rx_d1, rx_d2;
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
+            valid <= 1'b0;
             rx_d1 <= 1'b1;
             rx_d2 <= 1'b1;
         end else begin
@@ -27,11 +30,14 @@ module rx(
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
+            valid <= 1'b0;
             state <= IDLE;
             out <= 8'b0;
+            valid <= 1'b0;
             baud_cnt <= 0;
             data_reg <= 8'b0;
         end else begin
+            valid <= 1'b0;
             case (state)
                 IDLE: begin
                     if (rx_d2 == 1'b0) begin // 偵測到線路被拉低 (Start bit)
@@ -64,7 +70,8 @@ module rx(
                     if (baud_cnt == BAUD_LIMIT - 1) begin
                         baud_cnt <= 0;
                         state <= IDLE;
-                        out <= data_reg; // 整個 Byte 接收完成，更新到輸出
+                        out <= data_reg;
+                        valid <= 1'b1; // Pulse valid
                     end else begin
                         baud_cnt <= baud_cnt + 1;
                     end
