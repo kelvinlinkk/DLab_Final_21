@@ -1,8 +1,10 @@
 module before_sevenseg(
     input [3:0] state,
+    input [3:0] state_game_play,
     input ishost,
     input [2:0] player_count,
     input [1:0] ai_level,
+    input insurance_yn,
     input [5:0] money_you_have_thousands,
     input [5:0] money_you_have_hundreds,
     input [5:0] money_you_have_tens,
@@ -10,6 +12,13 @@ module before_sevenseg(
     input [5:0] money_you_bet_hundreds,
     input [5:0] money_you_bet_tens,
     input [5:0] money_you_bet_ones,
+    input [1:0] lose_win,
+    input [3:0] card_0,
+    input [3:0] card_1,
+    input [3:0] card_2,
+    input [3:0] card_3,
+    input [3:0] card_4,
+    input card_left_right, 
     output reg [5:0] d0,
     output reg [5:0] d1,
     output reg [5:0] d2,
@@ -17,7 +26,10 @@ module before_sevenseg(
     output reg [5:0] d4,
     output reg [5:0] d5,
     output reg [5:0] d6,
-    output reg [5:0] d7
+    output reg [5:0] d7,
+    output reg rgb1_r = 0,
+    output reg rgb1_g = 0,
+    output reg rgb1_b = 0
     );
     localparam BLANK = 6'd34;
     localparam NUM_0 = 6'd0;
@@ -29,8 +41,8 @@ module before_sevenseg(
     localparam CHAR_P = 6'd23;
     localparam CHAR_A = 6'd10;
     localparam CHAR_I = 6'd1;
-    localparam S_IDLE     = 4'd0;
-    localparam S_money_p1 = 4'd1;
+    localparam S_IDLE     = 4'd10;
+    localparam S_money_p1 = 4'd11;
     localparam S_PLAYER   = 4'd1;
     localparam S_AI       = 4'b0101;
     
@@ -77,6 +89,8 @@ module before_sevenseg(
             end 
             4'b0010:
             begin
+                case(state_game_play)
+                4'd11: begin
                 if(money_you_have_thousands == 6'd0)
                 begin
                     if(money_you_have_hundreds == 6'd0)
@@ -128,6 +142,175 @@ module before_sevenseg(
                     d1 = money_you_bet_tens;
                     d0 = money_you_bet_ones;
                 end
+                end
+                4'd2: begin
+                        rgb1_r = 0;
+                        rgb1_g = 0;
+                        rgb1_b = 0;
+                    if(insurance_yn) begin
+                        rgb1_g <= 1;
+                     end else begin
+                        rgb1_r <= 1;
+                    end
+                end
+                4'd5: begin
+                        rgb1_r = 0;
+                        rgb1_g = 0;
+                        rgb1_b = 0;
+                    if (card_0 / 10) begin
+                        d7 = card_0 / 10;
+                    end else begin
+                        d7 = BLANK;
+                    end
+                    d6 = card_0 % 10;
+                    d5 = BLANK;
+                    if (card_1 / 10) begin
+                        d4 = card_1 / 10;
+                    end else begin
+                        d4 = BLANK;
+                    end 
+                    d3 = card_1 % 10; 
+                    d2 = BLANK;
+                    d1 = BLANK;
+                    d0 = BLANK; 
+                end
+                4'd6: begin
+                        rgb1_r = 0;
+                        rgb1_g = 0;
+                        rgb1_b = 0;
+                    if (card_0 / 10) begin
+                        d7 = card_0 / 10;
+                    end else begin
+                        d7 = BLANK;
+                    end
+                    d6 = card_0 % 10;
+                    d5 = BLANK;
+                    if (card_1 / 10) begin
+                        d4 = card_1 / 10;
+                    end else begin
+                        d4 = BLANK;
+                    end 
+                    d3 = card_1 % 10; 
+                    d2 = BLANK;
+                    if (card_2 / 10) begin
+                        d1 = card_2 / 10;
+                    end else begin
+                        d1 = BLANK;
+                    end 
+                    d0 = card_2 % 10; 
+                end
+                4'd7: begin
+                    if (card_left_right) begin
+                        if (card_1 / 10) begin
+                        d7 = card_1 / 10;
+                    end else begin
+                        d7 = BLANK;
+                    end
+                    d6 = card_1 % 10;
+                    d5 = BLANK;
+                    if (card_2 / 10) begin
+                        d4 = card_2 / 10;
+                    end else begin
+                        d4 = BLANK;
+                    end 
+                    d3 = card_2 % 10; 
+                    d2 = BLANK;
+                    if (card_3 / 10) begin
+                        d1 = card_3 / 10;
+                    end else begin
+                        d1 = BLANK;
+                    end 
+                    d0 = card_3 % 10;
+                    end else begin
+                         if (card_0 / 10) begin
+                        d7 = card_0 / 10;
+                    end else begin
+                        d7 = BLANK;
+                    end
+                    d6 = card_0 % 10;
+                    d5 = BLANK;
+                    if (card_1 / 10) begin
+                        d4 = card_1 / 10;
+                    end else begin
+                        d4 = BLANK;
+                    end 
+                    d3 = card_1 % 10; 
+                    d2 = BLANK;
+                    if (card_2 / 10) begin
+                        d1 = card_2 / 10;
+                    end else begin
+                        d1 = BLANK;
+                    end 
+                    d0 = card_2 % 10;           
+                    end                   
+                end
+                
+                4'd8: begin
+                    if (card_left_right) begin
+                        if (card_2 / 10) begin
+                        d7 = card_2 / 10;
+                    end else begin
+                        d7 = BLANK;
+                    end
+                    d6 = card_2 % 10;
+                    d5 = BLANK;
+                    if (card_3 / 10) begin
+                        d4 = card_3 / 10;
+                    end else begin
+                        d4 = BLANK;
+                    end 
+                    d3 = card_3 % 10; 
+                    d2 = BLANK;
+                    if (card_4 / 10) begin
+                        d1 = card_4 / 10;
+                    end else begin
+                        d1 = BLANK;
+                    end 
+                    d0 = card_4 % 10;
+                    end else begin
+                         if (card_0 / 10) begin
+                        d7 = card_0 / 10;
+                    end else begin
+                        d7 = BLANK;
+                    end
+                    d6 = card_0 % 10;
+                    d5 = BLANK;
+                    if (card_1 / 10) begin
+                        d4 = card_1 / 10;
+                    end else begin
+                        d4 = BLANK;
+                    end 
+                    d3 = card_1 % 10; 
+                    d2 = BLANK;
+                    if (card_2 / 10) begin
+                        d1 = card_2 / 10;
+                    end else begin
+                        d1 = BLANK;
+                    end 
+                    d0 = card_2 % 10;           
+                    end
+                end
+                
+                4'd11: begin
+                    rgb1_r = 0;
+                    rgb1_g = 0;
+                    rgb1_b = 0;
+                    if (lose_win==2'd1) begin
+                        rgb1_r = 1;
+                        rgb1_g = 0;
+                        rgb1_b = 0;
+                    end else if (lose_win==2'd2) begin
+                        rgb1_r = 1;
+                        rgb1_g = 1;
+                        rgb1_b = 0;
+                    end else if(lose_win==2'd3) begin
+                        rgb1_r = 0;
+                        rgb1_g = 1;
+                        rgb1_b = 0;
+                    end
+                    
+                end
+                endcase
             end    
             
             S_AI:
