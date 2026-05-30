@@ -17,7 +17,6 @@ module rx(
     reg rx_d1, rx_d2;
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            valid <= 1'b0;
             rx_d1 <= 1'b1;
             rx_d2 <= 1'b1;
         end else begin

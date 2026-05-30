@@ -132,6 +132,25 @@ module start_ui_top(
         .btn(btnL),
         .pulse(pulseL)
     );
+
+    // Convert clk_slow pulses into 1-cycle sys_clk pulses for the fast FSMs
+    reg [1:0] syncU, syncC, syncD, syncR, syncL;
+    always @(posedge sys_clk or negedge sys_rst_n) begin
+        if (!sys_rst_n) begin
+            syncU <= 2'b0; syncC <= 2'b0; syncD <= 2'b0; syncR <= 2'b0; syncL <= 2'b0;
+        end else begin
+            syncU <= {syncU[0], pulseU};
+            syncC <= {syncC[0], pulseC};
+            syncD <= {syncD[0], pulseD};
+            syncR <= {syncR[0], pulseR};
+            syncL <= {syncL[0], pulseL};
+        end
+    end
+    wire pulseU_sys = (syncU == 2'b01);
+    wire pulseC_sys = (syncC == 2'b01);
+    wire pulseD_sys = (syncD == 2'b01);
+    wire pulseR_sys = (syncR == 2'b01);
+    wire pulseL_sys = (syncL == 2'b01);
     wire [5:0] d0;
     wire [5:0] d1;
     wire [5:0] d2;
@@ -159,13 +178,13 @@ module start_ui_top(
     wire card_left_right;
     wire [1:0] lose_win;
     start_ui_host startui_h(
-        .clk(clk_slow),
+        .clk(sys_clk),
         .rst_n(sys_rst_n),
-        .btnU(pulseU),
-        .btnC(pulseC),
-        .btnD(pulseD),
-        .btnR(pulseR),
-        .btnL(pulseL),
+        .btnU(pulseU_sys),
+        .btnC(pulseC_sys),
+        .btnD(pulseD_sys),
+        .btnR(pulseR_sys),
+        .btnL(pulseL_sys),
         .ishost(ishost),
         .signal_in_1(signal_in_p1),
         .signal_in_2(signal_in_p2),
@@ -182,14 +201,14 @@ module start_ui_top(
         .ai_level(ai_level)
     );
     start_ui_player start_ui_player(
-        .clk(clk_slow),
+        .clk(sys_clk),
         .rst_n(sys_rst_n),
         .host_ace(),
-        .btnU(pulseU),
-        .btnC(pulseC),
-        .btnD(pulseD),
-        .btnR(pulseR),
-        .btnL(pulseL),
+        .btnU(pulseU_sys),
+        .btnC(pulseC_sys),
+        .btnD(pulseD_sys),
+        .btnR(pulseR_sys),
+        .btnL(pulseL_sys),
         .signal_in(signal_in_p),
         .ishost(ishost),
         .startstartui(startstartui),

@@ -216,7 +216,7 @@ module start_ui_host (
                     if (current_player <= {1'b0, player_count}) begin
                         case (deal_step)
                             2'd0: begin
-                                if (!tx_busy_1 && !tx_busy_2 && !tx_busy_3 && !tx_busy_4) begin
+                                if (!tx_busy_1 && !tx_valid_1 && !tx_busy_2 && !tx_valid_2 && !tx_busy_3 && !tx_valid_3 && !tx_busy_4 && !tx_valid_4) begin
                                     if (!pull_reg) begin
                                         pull_reg <= 1'b1;
                                     end else if (pull_reg) begin
@@ -236,7 +236,7 @@ module start_ui_host (
                                 end
                             end
                             2'd1: begin
-                                if (!tx_busy_1 && !tx_busy_2 && !tx_busy_3 && !tx_busy_4)
+                                if (!tx_busy_1 && !tx_valid_1 && !tx_busy_2 && !tx_valid_2 && !tx_busy_3 && !tx_valid_3 && !tx_busy_4 && !tx_valid_4)
                                     deal_step <= 2'd2;
                             end
                             2'd2: begin
@@ -258,7 +258,7 @@ module start_ui_host (
                                 end
                             end
                             2'd3: begin
-                                if (!tx_busy_1 && !tx_busy_2 && !tx_busy_3 && !tx_busy_4) begin
+                                if (!tx_busy_1 && !tx_valid_1 && !tx_busy_2 && !tx_valid_2 && !tx_busy_3 && !tx_valid_3 && !tx_busy_4 && !tx_valid_4) begin
                                     deal_step      <= 2'd0;
                                     current_player <= current_player + 3'd1;
                                 end
@@ -320,7 +320,7 @@ module start_ui_host (
                                 deal_step <= 2'd2;
                             end
                             2'd2: begin
-                                if (!tx_busy_1 && !tx_busy_2 && !tx_busy_3 && !tx_busy_4) begin
+                                if (!tx_busy_1 && !tx_valid_1 && !tx_busy_2 && !tx_valid_2 && !tx_busy_3 && !tx_valid_3 && !tx_busy_4 && !tx_valid_4) begin
                                     deal_step <= 2'd0;
                                 end
                             end
@@ -345,7 +345,7 @@ module start_ui_host (
                 end
 
                 S_GAME_OVER: begin
-                    if (!tx_busy_1 && !tx_busy_2 && !tx_busy_3 && !tx_busy_4) begin
+                    if (!tx_busy_1 && !tx_valid_1 && !tx_busy_2 && !tx_valid_2 && !tx_busy_3 && !tx_valid_3 && !tx_busy_4 && !tx_valid_4) begin
                         tx_reg_1   <= {2'b00, host_total_score[5:0]};
                         tx_reg_2   <= {2'b00, host_total_score[5:0]};
                         tx_reg_3   <= {2'b00, host_total_score[5:0]};

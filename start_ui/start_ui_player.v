@@ -86,7 +86,7 @@ module start_ui_player(
        .clk(clk),
        .rst_n(rst_n),
        .data_in(tx),
-       .valid(1'b1),
+       .valid(tx != 8'd0),
        .signal_out(signal_out),
        .busy()
      );

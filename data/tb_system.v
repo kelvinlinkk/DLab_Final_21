@@ -115,6 +115,18 @@ module tb_system();
         .signal_out(signal_out_p)
     );
 
+    // --- DEBUG MONITOR ---
+    reg [3:0] prev_state_p = 4'd15;
+    always @(posedge clk_player) begin
+        if (state_p != prev_state_p) begin
+            $display("[DEBUG] Time %0t | Player State changed to: %d", $time, state_p);
+            prev_state_p <= state_p;
+        end
+        if (uut_player.rx_valid_reg) begin
+            $display("[DEBUG] Time %0t | Player rx_valid_reg HIGH | rx = %b", $time, uut_player.rx);
+        end
+    end
+
     // -------------------------------------------------------------------------
     // 6. Test Sequence
     // -------------------------------------------------------------------------
@@ -135,9 +147,11 @@ module tb_system();
         #(CLK_PERIOD_HOST * 5);
         
         // --- Player Setup ---
-        // Player sets bet money (press C)
+        // Player sets bet money (press U to increase bet, then press C to confirm)
         $display("[%0t] Player sets bet and waits...", $time);
-        btnC_p = 1; #(CLK_PERIOD_PLAYER); btnC_p = 0;
+        btnC_p = 1; #(CLK_PERIOD_PLAYER); btnC_p = 0; // Enter S_money_p1
+        #(CLK_PERIOD_PLAYER * 5);
+        btnU_p = 1; #(CLK_PERIOD_PLAYER); btnU_p = 0; // Increase bet (money_you_bet = 20)
         #(CLK_PERIOD_PLAYER * 5);
         btnC_p = 1; #(CLK_PERIOD_PLAYER); btnC_p = 0; // Confirm bet, enter wait_start
 

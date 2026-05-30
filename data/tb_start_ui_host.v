@@ -42,8 +42,8 @@ module tb_start_ui_host();
     localparam S_GAME_OVER         = 4'd8;
 
     // 時脈與波特率參數 (50MHz 時脈，UART 為 9600 bps)
-    parameter CLK_PERIOD = 10;               // 50 MHz -> 20ns
-    parameter BIT_PERIOD = 10416 * 20;       // BAUD_LIMIT * CLK_PERIOD
+    parameter CLK_PERIOD = 20;               // 50 MHz -> 20ns
+    parameter BIT_PERIOD = 10416 * CLK_PERIOD;       // BAUD_LIMIT * CLK_PERIOD
 
     // -------------------------------------------------------------------------
     // 2. 實體化待測模組 (UUT)
@@ -91,11 +91,14 @@ module tb_start_ui_host();
             monitor_cnt <= 0;
         end else begin
             if (monitor_cnt >= 32'd100000) begin 
-                $display("[MONITOR] Time: %0t ps | FSM State_h = %d | Current Player ID = %d", $time, state_h, uut.current_player);
+                $display("[MONITOR] Time: %0t ps | FSM State_h = %d | Current Player ID = %d | deal_step = %d", $time, state_h, uut.current_player, uut.deal_step);
                 monitor_cnt <= 0;
             end else begin
                 monitor_cnt <= monitor_cnt + 1;
             end
+            
+            if (uut.rx_valid_1) $display("[DEBUG] Time: %0t ps | rx_valid_1 HIGH | rx_wire_1 = 8'b%b | rx_reg_1 = 8'b%b", $time, uut.rx_wire_1, uut.rx_reg_1);
+            if (uut.rx_valid_2) $display("[DEBUG] Time: %0t ps | rx_valid_2 HIGH | rx_wire_2 = 8'b%b | rx_reg_2 = 8'b%b", $time, uut.rx_wire_2, uut.rx_reg_2);
         end
     end
 

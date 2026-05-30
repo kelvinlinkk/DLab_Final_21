@@ -133,7 +133,7 @@ module tb_start_ui_player();
         send_uart_byte(8'b1000_0000); 
         wait (state != 4'd1); // 等待跳轉出 State 1
         #(CLK_PERIOD * 10);
-        send_uart_byte(8'b0000_0000); // 傳送 Clear Byte 歸零 rx[7]
+        // send_uart_byte(8'b0000_0000); // Removed Clear Byte to prevent skipping card_get_2
 
         // ---------------------------------------------------------
         // 8. 莊家發 Card 0 (Value 10)
@@ -166,7 +166,7 @@ module tb_start_ui_player();
         // ---------------------------------------------------------
         // 11. 莊家發送最終點數 (Value 18)
         // ---------------------------------------------------------
-        send_uart_byte(8'b0000_0000); // 先清空
+        // send_uart_byte(8'b0000_0000); // Removed premature clear byte
         send_uart_byte(8'b1001_0010); // 18 = 0x12
         #(CLK_PERIOD * 100);
 
