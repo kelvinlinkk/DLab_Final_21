@@ -41,7 +41,7 @@ module before_sevenseg(
     localparam CHAR_P = 6'd23;
     localparam CHAR_A = 6'd10;
     localparam CHAR_I = 6'd1;
-    localparam S_IDLE     = 4'd10;
+    localparam S_IDLE     = 4'd0;
     localparam S_money_p1 = 4'd11;
     localparam S_PLAYER   = 4'd1;
     localparam S_AI       = 4'b0101;

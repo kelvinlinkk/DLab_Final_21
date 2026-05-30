@@ -165,7 +165,7 @@ module start_ui_top(
         .player_count(player_count),
         .ai_level(ai_level)
     );
-    game_play game_play(
+    start_ui_player start_ui_player(
         .clk(clk_slow),
         .rst_n(sys_rst_n),
         .host_ace(),
