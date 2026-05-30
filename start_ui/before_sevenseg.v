@@ -1,6 +1,7 @@
 module before_sevenseg(
     input [3:0] state,
     input [3:0] state_game_play,
+    input [3:0] state_h,
     input ishost,
     input [2:0] player_count,
     input [1:0] ai_level,
@@ -41,6 +42,27 @@ module before_sevenseg(
     localparam CHAR_P = 6'd23;
     localparam CHAR_A = 6'd10;
     localparam CHAR_I = 6'd1;
+
+    // top-level states
+    localparam TOP_IDLE        = 4'b0000;
+    localparam TOP_START_HOST  = 4'b0001;
+    localparam TOP_START_GUEST = 4'b0010;
+    localparam TOP_GAME_HOST   = 4'b0011;
+    localparam TOP_GAME_GUEST  = 4'b0100;
+    localparam TOP_START_AI    = 4'b0101;
+
+    // host states
+    // localparam H_IDLE             = 4'd0;
+    // localparam H_PLAYER_COUNT     = 4'd1;
+    // localparam H_AI_LEVEL         = 4'd2;
+    localparam H_SHUFFLE          = 4'd3;
+    localparam H_HOST_TWO_CARDS   = 4'd4;
+    localparam H_PLAYER_TWO_CARDS = 4'd5;
+    localparam H_PLAYER_TURN      = 4'd6;
+    localparam H_HOST_TURN        = 4'd7;
+    localparam H_GAME_OVER        = 4'd8;
+
+    // player states (some matching old code)
     localparam S_IDLE     = 4'd0;
     localparam S_money_p1 = 4'd11;
     localparam S_PLAYER   = 4'd1;
@@ -56,38 +78,17 @@ module before_sevenseg(
         d5 = BLANK;
         d6 = BLANK;
         d7 = BLANK;
-
+        if(ishost==1'b0) begin
         case(state)
-            S_IDLE:
+            TOP_IDLE:
             begin
-                if (ishost) begin
-                    d3 = 6'd17;
-                    d2 = 6'd0;
-                    d1 = 6'd26;
-                    d0 = 6'd27;
-                end else begin
-                    d3 = 6'd23;
-                    d2 = 6'd20;
-                    d1 = 6'd10;
-                    d0 = 6'd32;
-                end  
+                d3 = 6'd23;
+                d2 = 6'd20;
+                d1 = 6'd10;
+                d0 = 6'd32;
             end    
             
-            4'b0001:
-            begin
-                d1 = CHAR_P;
-                case(player_count)
-                    3'd0: d0 = NUM_0;
-                    3'd1: d0 = NUM_1;
-                    3'd2: d0 = NUM_2;
-                    3'd3: d0 = NUM_3;
-                    3'd4: d0 = NUM_4;
-                    default:begin
-                        d0 = NUM_0;
-                    end
-                endcase
-            end 
-            4'b0010:
+            TOP_START_GUEST:
             begin
                 case(state_game_play)
                 4'd11: begin
@@ -313,21 +314,71 @@ module before_sevenseg(
                 endcase
             end    
             
-            S_AI:
-            begin
-                d3 = CHAR_A;
-                d2 = CHAR_I;
-                case(ai_level)
-                    2'd1: d0 = NUM_1;
-                    2'd2: d0 = NUM_2;
-                    2'd3: d0 = NUM_3;
-                    default: d0=NUM_1;
-                endcase
-            end
             default:
             begin
                 // default
             end
         endcase
+        end else begin
+            case(state)
+                TOP_IDLE: begin
+                        d3 = 6'd17;
+                        d2 = 6'd0;
+                        d1 = 6'd26;
+                        d0 = 6'd27;
+                end
+                
+                TOP_START_HOST: begin
+                    d1 = CHAR_P;
+                    case(player_count)
+                        3'd0: d0 = NUM_0;
+                        3'd1: d0 = NUM_1;
+                        3'd2: d0 = NUM_2;
+                        3'd3: d0 = NUM_3;
+                        3'd4: d0 = NUM_4;
+                        default: d0 = NUM_0;
+                    endcase
+                end
+                
+                TOP_START_AI: begin
+                    d3 = CHAR_A;
+                    d2 = CHAR_I;
+                    case(ai_level)
+                        2'd1: d0 = NUM_1;
+                        2'd2: d0 = NUM_2;
+                        2'd3: d0 = NUM_3;
+                        default: d0 = NUM_1;
+                    endcase
+                end
+                
+                TOP_GAME_HOST: begin
+                    case(state_h)
+                        H_SHUFFLE: begin
+                            
+                        end
+                        H_HOST_TWO_CARDS: begin
+                            
+                        end
+                        H_PLAYER_TWO_CARDS: begin
+                            
+                        end
+                        H_PLAYER_TURN: begin
+                            
+                        end
+                        H_HOST_TURN: begin
+                            
+                        end
+                        H_GAME_OVER: begin
+                            
+                        end
+                        default: begin
+                        end
+                    endcase
+                end
+                
+                default: begin
+                end
+            endcase
+        end
     end
 endmodule

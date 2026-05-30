@@ -94,11 +94,11 @@ module start_ui_top(
             end
             game_host:
             begin
-            state<=init;
+                state<=game_host;
             end
             game_guest:
             begin
-            state<=init;
+                state<=game_guest;
             end
             default:
             begin
@@ -162,6 +162,7 @@ module start_ui_top(
     wire [2:0] player_count;
     wire [1:0] ai_level;
     wire [3:0] state_game_play_to_before_seg;
+    wire [3:0] state_h_to_before_seg;
     wire [5:0] money_you_have_thousands;
     wire [5:0] money_you_have_hundreds;
     wire [5:0] money_you_have_tens;
@@ -196,7 +197,7 @@ module start_ui_top(
         .signal_out_4(signal_out_p4),
         .startstartui(startstartui),
         .backtogh_h(backtogh_h),
-        .state_h(),
+        .state_h(state_h_to_before_seg),
         .player_count(player_count),
         .ai_level(ai_level)
     );
@@ -234,6 +235,7 @@ module start_ui_top(
     before_sevenseg segchoser(
         .state(state),
         .state_game_play(state_game_play_to_before_seg),
+        .state_h(state_h_to_before_seg),
         .ishost(ishost),
         .player_count(player_count),
         .ai_level(ai_level),
