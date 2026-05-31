@@ -166,7 +166,8 @@ module start_ui_top(
     wire [5:0] money_you_have_thousands;
     wire [5:0] money_you_have_hundreds;
     wire [5:0] money_you_have_tens;
-    wire [5:0] money_you_have_ones;    
+    wire [5:0] money_you_have_ones;
+    wire [5:0] money_you_bet_thousands;    
     wire [5:0] money_you_bet_hundreds;
     wire [5:0] money_you_bet_tens;
     wire [5:0] money_you_bet_ones;
@@ -201,7 +202,7 @@ module start_ui_top(
         .player_count(player_count),
         .ai_level(ai_level)
     );
-    start_ui_player start_ui_player(
+    game_player game_player(
         .clk(sys_clk),
         .rst_n(sys_rst_n),
         .host_ace(),
@@ -227,7 +228,8 @@ module start_ui_top(
         .money_you_have_thousands(money_you_have_thousands),
         .money_you_have_hundreds(money_you_have_hundreds),
         .money_you_have_tens(money_you_have_tens),
-        .money_you_have_ones(money_you_have_ones),    
+        .money_you_have_ones(money_you_have_ones),
+        .money_you_bet_thousands(money_you_bet_thousands),    
         .money_you_bet_hundreds(money_you_bet_hundreds),
         .money_you_bet_tens(money_you_bet_tens),
         .money_you_bet_ones(money_you_bet_ones)
@@ -243,7 +245,8 @@ module start_ui_top(
         .money_you_have_thousands(money_you_have_thousands),
         .money_you_have_hundreds(money_you_have_hundreds),
         .money_you_have_tens(money_you_have_tens),
-        .money_you_have_ones(money_you_have_ones),    
+        .money_you_have_ones(money_you_have_ones),
+        .money_you_bet_thousands(money_you_bet_thousands),    
         .money_you_bet_hundreds(money_you_bet_hundreds),
         .money_you_bet_tens(money_you_bet_tens),
         .money_you_bet_ones(money_you_bet_ones),

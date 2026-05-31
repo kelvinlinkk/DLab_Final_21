@@ -156,6 +156,10 @@ module start_ui_host (
                             state_h    <= S_SHUFFLE; 
                         end
                     end
+                    if (btnD) begin
+                        if (player_count == 3'd0) player_count <= 3'd4;
+                        else player_count <= player_count - 3'd1;
+                    end
                     if (btnR) begin
                         backtogh_h <= 1'b1;
                         state_h    <= S_IDLE;
@@ -346,10 +350,10 @@ module start_ui_host (
 
                 S_GAME_OVER: begin
                     if (!tx_busy_1 && !tx_valid_1 && !tx_busy_2 && !tx_valid_2 && !tx_busy_3 && !tx_valid_3 && !tx_busy_4 && !tx_valid_4) begin
-                        tx_reg_1   <= {2'b00, host_total_score[5:0]};
-                        tx_reg_2   <= {2'b00, host_total_score[5:0]};
-                        tx_reg_3   <= {2'b00, host_total_score[5:0]};
-                        tx_reg_4   <= {2'b00, host_total_score[5:0]};
+                        tx_reg_1   <= {3'b100, host_total_score[4:0]};
+                        tx_reg_2   <= {3'b100, host_total_score[4:0]};
+                        tx_reg_3   <= {3'b100, host_total_score[4:0]};
+                        tx_reg_4   <= {3'b100, host_total_score[4:0]};
                         
                         tx_valid_1 <= 1'b1;
                         tx_valid_2 <= 1'b1;
