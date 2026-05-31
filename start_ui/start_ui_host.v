@@ -21,7 +21,14 @@ module start_ui_host (
     output reg backtogh_h = 0,
     output reg [3:0] state_h,
     output reg [2:0] player_count = 3'd0,
-    output reg [1:0] ai_level = 2'd1
+    output reg [1:0] ai_level = 2'd1,
+    
+    output [3:0] host_card_0,
+    output [3:0] host_card_1,
+    output [3:0] host_card_2,
+    output [3:0] host_card_3,
+    output [3:0] host_card_4,
+    output reg host_card_left_right = 0
 );
 
     localparam S_IDLE              = 4'd0;
@@ -48,8 +55,14 @@ module start_ui_host (
 
     reg [3:0] cards [0:8];
     reg [3:0] host_card_count;
-    wire [5:0] host_total_score;
     
+    assign host_card_0 = cards[0];
+    assign host_card_1 = cards[1];
+    assign host_card_2 = cards[2];
+    assign host_card_3 = cards[3];
+    assign host_card_4 = cards[4];
+    
+    wire [5:0] host_total_score;
     reg shuffle_reg;
     reg pull_reg;
     wire [3:0] drawn_card;
@@ -120,6 +133,7 @@ module start_ui_host (
             rx_reg_2         <= 8'b0;
             rx_reg_3         <= 8'b0;
             rx_reg_4         <= 8'b0;
+            host_card_left_right <= 1'b0;
 
             for (k = 0; k < 9; k = k + 1) begin
                 cards[k]     <= 4'd0;
@@ -138,6 +152,7 @@ module start_ui_host (
             case (state_h)
                 S_IDLE: begin
                     backtogh_h <= 1'b0;
+                    host_card_left_right <= 1'b0;
                     if (startstartui && ishost) begin
                         state_h <= S_PLAYER;
                     end
@@ -281,46 +296,72 @@ module start_ui_host (
                                 case (current_player)
                                     3'd1: begin
                                         if (rx_valid_1 && rx_wire_1 == 8'b00000001) begin 
-                                            pull_reg <= 1'b1;
-                                            deal_step <= 2'd1;
+                                            if (!pull_reg) begin
+                                                pull_reg <= 1'b1;
+                                            end
                                         end else if (rx_valid_1 && rx_wire_1 == 8'b00000010) begin
                                             current_player <= current_player + 3'd1;
+                                        end
+                                        
+                                        if (pull_reg) begin
+                                            pull_reg <= 1'b0;
+                                            tx_reg_1 <= {4'b1100, drawn_card};
+                                            tx_valid_1 <= 1'b1;
+                                            deal_step <= 2'd1;
                                         end
                                     end
                                     3'd2: begin
                                         if (rx_valid_2 && rx_wire_2 == 8'b00000001) begin 
-                                            pull_reg <= 1'b1;
-                                            deal_step <= 2'd1;
+                                            if (!pull_reg) begin
+                                                pull_reg <= 1'b1;
+                                            end
                                         end else if (rx_valid_2 && rx_wire_2 == 8'b00000010) begin
                                             current_player <= current_player + 3'd1;
+                                        end
+                                        
+                                        if (pull_reg) begin
+                                            pull_reg <= 1'b0;
+                                            tx_reg_2 <= {4'b1100, drawn_card};
+                                            tx_valid_2 <= 1'b1;
+                                            deal_step <= 2'd1;
                                         end
                                     end
                                     3'd3: begin
                                         if (rx_valid_3 && rx_wire_3 == 8'b00000001) begin 
-                                            pull_reg <= 1'b1;
-                                            deal_step <= 2'd1;
+                                            if (!pull_reg) begin
+                                                pull_reg <= 1'b1;
+                                            end
                                         end else if (rx_valid_3 && rx_wire_3 == 8'b00000010) begin
                                             current_player <= current_player + 3'd1;
+                                        end
+                                        
+                                        if (pull_reg) begin
+                                            pull_reg <= 1'b0;
+                                            tx_reg_3 <= {4'b1100, drawn_card};
+                                            tx_valid_3 <= 1'b1;
+                                            deal_step <= 2'd1;
                                         end
                                     end
                                     3'd4: begin
                                         if (rx_valid_4 && rx_wire_4 == 8'b00000001) begin 
-                                            pull_reg <= 1'b1;
-                                            deal_step <= 2'd1;
+                                            if (!pull_reg) begin
+                                                pull_reg <= 1'b1;
+                                            end
                                         end else if (rx_valid_4 && rx_wire_4 == 8'b00000010) begin
                                             current_player <= current_player + 3'd1;
+                                        end
+                                        
+                                        if (pull_reg) begin
+                                            pull_reg <= 1'b0;
+                                            tx_reg_4 <= {4'b1100, drawn_card};
+                                            tx_valid_4 <= 1'b1;
+                                            deal_step <= 2'd1;
                                         end
                                     end
                                 endcase
                             end
                             2'd1: begin
-                                pull_reg <= 1'b0;
-                                case (current_player)
-                                    3'd1: begin tx_reg_1 <= {4'b1100, drawn_card}; tx_valid_1 <= 1'b1; end
-                                    3'd2: begin tx_reg_2 <= {4'b1100, drawn_card}; tx_valid_2 <= 1'b1; end
-                                    3'd3: begin tx_reg_3 <= {4'b1100, drawn_card}; tx_valid_3 <= 1'b1; end
-                                    3'd4: begin tx_reg_4 <= {4'b1100, drawn_card}; tx_valid_4 <= 1'b1; end
-                                endcase
+                                // tx_valid is already pulsed in 2'd0
                                 deal_step <= 2'd2;
                             end
                             2'd2: begin
@@ -335,15 +376,23 @@ module start_ui_host (
                 end
 
                 S_HOST_TURN: begin
-                    if (host_total_score < 6'd17) begin
+                    if (btnL) host_card_left_right <= 1'b0;
+                    if (btnR) host_card_left_right <= 1'b1;
+
+                    if (btnC) begin // Manually draw a card
                         if (!pull_reg) begin
                             pull_reg <= 1'b1;
-                        end else if (pull_reg) begin
-                            pull_reg               <= 1'b0;
-                            cards[host_card_count] <= drawn_card;
-                            host_card_count        <= host_card_count + 4'd1;
                         end
-                    end else begin
+                    end
+                    
+                    if (pull_reg) begin // One clock cycle later, the card is ready
+                        pull_reg               <= 1'b0;
+                        cards[host_card_count] <= drawn_card;
+                        if (host_card_count == 4'd3) host_card_left_right <= 1'b1; // Auto shift when 4th card is drawn
+                        host_card_count        <= host_card_count + 4'd1;
+                    end
+                    
+                    if (btnD && host_total_score >= 6'd17) begin // Stand only if score >= 17
                         state_h <= S_GAME_OVER;
                     end
                 end

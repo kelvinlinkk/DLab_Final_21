@@ -80,11 +80,12 @@ module game_player(
      );
     
   reg [7:0] tx = 8'd0;
+  reg tx_valid = 1'b0;
   tx tx_0(
        .clk(clk),
        .rst_n(rst_n),
        .data_in(tx),
-       .valid(1'b1),
+       .valid(tx_valid),
        .signal_out(signal_out),
        .busy()
      );
@@ -120,6 +121,7 @@ module game_player(
       host_ace_reg    <= 1'b0;
       there_is_host_ace <= 1'd0;
       host_card       <= 5'b0;
+      tx_valid        <= 1'b0;
       money_you_bet   <= 15'd0;
       cards[0]        <= 4'd0;
       cards[1]        <= 4'd0;
@@ -140,6 +142,7 @@ module game_player(
       end           
       backtogh_p <= 1'b0;
       tx <= 8'b0;
+      tx_valid <= 1'b0;
 
     case(state)
       S_IDLE: begin
@@ -225,15 +228,18 @@ module game_player(
         if(btnU)
         begin
           tx<=8'b00000001; // Hit
+          tx_valid <= 1'b1;
         end
         if(btnD)
         begin
           tx<=8'b00000010; // Stand
+          tx_valid <= 1'b1;
           state<=wait_host;
         end
         if((btnC)&&((money_you_have/2)>=(money_you_bet)))// double in
         begin
           tx<=8'b00000001; // Hit
+          tx_valid <= 1'b1;
           double_in <= 1'd1;
           // Wait for the 3rd card, then auto-stand in card_get_3
         end
@@ -247,21 +253,25 @@ module game_player(
       begin
         if (double_in) begin
             tx <= 8'b00000010; // Auto stand
+            tx_valid <= 1'b1;
             state <= wait_host;
         end else begin
             if(btnU)
             begin
               tx<=8'b00000001; // Hit
+              tx_valid <= 1'b1;
             end
             if(btnD)
             begin
               tx<=8'b00000010; // Stand
+              tx_valid <= 1'b1;
               state<=wait_host;
             end
         end
         if(rx_valid && rx_wire[7] == 1'b1 && !double_in)
         begin
           cards[3]<=rx_wire[3:0];
+          card_left_right <= 1'd1; // Auto-shift when 4th card is received
           state<=card_get_4;
         end
       end
@@ -270,10 +280,12 @@ module game_player(
         if(btnU)
         begin
           tx<=8'b00000001; // Hit
+          tx_valid <= 1'b1;
         end
         if(btnD)
         begin
           tx<=8'b00000010; // Stand
+          tx_valid <= 1'b1;
           state<=wait_host;
         end
         if(btnL)
@@ -294,7 +306,6 @@ module game_player(
       wait_host:
       begin
         tx<={3'b100, player_sum[4:0]}; // 已填入實際手牌總和
-        shift <= {shift[1:0], rx[7]}; 
         if(btnL)
         begin
         card_left_right <= 1'd0;
@@ -313,21 +324,27 @@ module game_player(
       game_over1:
       begin
         // A. 保險結算邏輯
-        if (there_is_host_ace == 1'd1) begin
-            if (host_card != 5'd21) begin // 莊家沒有21點，沒收保險金
-                next_money <= money_you_have - (money_you_bet/2) - money_you_bet;
-                money_you_have <= money_you_have - (money_you_bet/2) - money_you_bet;
+        if (there_is_host_ace == 1'd1 && insurance_yn == 1'd1) begin
+            if (host_card != 5'd21) begin // 莊家沒有21點，沒收保險金 (扣除 0.5 倍)
+                next_money <= money_you_have - (money_you_bet/2);
+                money_you_have <= money_you_have - (money_you_bet/2);
                 state <= game_over2;
-            end else begin // 莊家有21點，獲得保險金理賠 (1賠2，淨得一倍保險金)
-                next_money <= money_you_have + (money_you_bet/2) - money_you_bet;
-                money_you_have <= money_you_have + (money_you_bet/2) - money_you_bet;
-                lose_win <= 2'd1;
+            end else begin // 莊家有21點，獲得保險金理賠 (保險贏 1 倍, 但主注輸 1 倍, 總計不變或輸)
+                // 這裡簡化處理：如果玩家也是 21 點 (平手)，不扣主注；否則扣主注
+                if (player_sum == 6'd21) begin
+                    next_money <= money_you_have + (money_you_bet/2); // 淨賺保險金
+                    money_you_have <= money_you_have + (money_you_bet/2);
+                end else begin
+                    next_money <= money_you_have + (money_you_bet/2) - money_you_bet;
+                    money_you_have <= money_you_have + (money_you_bet/2) - money_you_bet;
+                end
+                lose_win <= 2'd1; // 顯示玩家輸 (因為莊家21點)
                 state <= S_money_p1;                
             end
         end
         else begin
-            next_money <= money_you_have - money_you_bet;
-            money_you_have <= money_you_have - money_you_bet;
+            next_money <= money_you_have;
+            money_you_have <= money_you_have;
             state <= game_over2;     
         end
       end
@@ -337,8 +354,8 @@ module game_player(
         // B. 主注輸贏結算邏輯
         lose_win <= wire_lose_win;
 
-        if (wire_lose_win == 2'd1) begin
-            if(double_in) begin
+        if (wire_lose_win == 2'd1) begin // LOSE
+            if (double_in) begin
                 if (next_money < money_you_bet*2) begin
                     next_money <= 15'd0;
                     money_you_have <= 15'd0;
@@ -346,8 +363,7 @@ module game_player(
                     next_money <= next_money - money_you_bet*2;
                     money_you_have <= next_money - money_you_bet*2;
                 end
-            end
-            else begin
+            end else begin
                 if (next_money < money_you_bet) begin
                     next_money <= 15'd0;
                     money_you_have <= 15'd0;
@@ -357,8 +373,8 @@ module game_player(
                 end
             end
         end
-        else if (wire_lose_win == 2'd3) begin
-            if(double_in) begin
+        else if (wire_lose_win == 2'd3) begin // WIN
+            if (double_in) begin
                 if (next_money + money_you_bet*2 > 15'd9999) begin
                     next_money <= 15'd9999;
                     money_you_have <= 15'd9999;
@@ -366,8 +382,7 @@ module game_player(
                     next_money <= next_money + money_you_bet*2;
                     money_you_have <= next_money + money_you_bet*2;
                 end
-            end
-            else begin
+            end else begin
                 if (next_money + money_you_bet > 15'd9999) begin
                     next_money <= 15'd9999;
                     money_you_have <= 15'd9999;
@@ -377,7 +392,8 @@ module game_player(
                 end
             end
         end
-        // If tie (2'd2), next_money and money_you_have remain unchanged
+        // If tie (2'd2), next_money and money_you_have remain unchanged (original bet returned)
+        
         state <= S_money_p1; // 回到初始狀態等待下一局
       end
       default:

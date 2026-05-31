@@ -21,6 +21,12 @@ module before_sevenseg(
     input [3:0] card_3,
     input [3:0] card_4,
     input card_left_right, 
+    input [3:0] host_card_0,
+    input [3:0] host_card_1,
+    input [3:0] host_card_2,
+    input [3:0] host_card_3,
+    input [3:0] host_card_4,
+    input host_card_left_right,
     output reg [5:0] d0,
     output reg [5:0] d1,
     output reg [5:0] d2,
@@ -157,15 +163,41 @@ module before_sevenseg(
                     d0 <= money_you_bet_ones;
                 end
                 end
+                4'd1: begin // check_host_ace (DEBUG)
+                    d3 <= CHAR_A;
+                    d2 <= 6'd12; // C
+                    d1 <= 6'd14; // E
+                    d0 <= BLANK;
+                end
+                4'd3: begin // card_get_0 (DEBUG)
+                    d3 <= 6'd12; // C
+                    d2 <= BLANK;
+                    d1 <= NUM_0;
+                    d0 <= BLANK;
+                end
+                4'd4: begin // card_get_1 (DEBUG)
+                    d3 <= 6'd12; // C
+                    d2 <= BLANK;
+                    d1 <= NUM_1;
+                    d0 <= BLANK;
+                end
                 4'd2: begin
-                        rgb1_r <= 0;
-                        rgb1_g <= 0;
-                        rgb1_b <= 0;
+                    rgb1_r <= 0;
+                    rgb1_g <= 0;
+                    rgb1_b <= 0;
                     if(insurance_yn) begin
                         rgb1_g <= 1;
-                     end else begin
+                    end else begin
                         rgb1_r <= 1;
                     end
+                    d7 <= 6'd26; // S
+                    d6 <= 6'd10; // A
+                    d5 <= 6'd15; // F
+                    d4 <= 6'd14; // E
+                    d3 <= BLANK;
+                    d2 <= BLANK;
+                    d1 <= BLANK;
+                    d0 <= BLANK;
                 end
                 4'd5: begin
                         rgb1_r <= 0;
@@ -391,17 +423,64 @@ module before_sevenseg(
                             d1 <= 6'd10; // A
                             d0 <= 6'd32; // Y
                         end
-                        H_HOST_TURN: begin
-                            d3 <= 6'd17; // H
-                            d2 <= 6'd0;  // O
-                            d1 <= 6'd26; // S
-                            d0 <= 6'd27; // T
-                        end
-                        H_GAME_OVER: begin
-                            d3 <= 6'd26; // S
-                            d2 <= 6'd27; // T
-                            d1 <= 6'd0;  // O
-                            d0 <= 6'd23; // P
+                        H_HOST_TURN, H_GAME_OVER: begin
+                            if (!host_card_left_right) begin
+                                if (host_card_0 == 0) begin
+                                    d7 <= BLANK; d6 <= BLANK;
+                                end else begin
+                                    if (host_card_0 / 10) d7 <= host_card_0 / 10; else d7 <= BLANK;
+                                    d6 <= host_card_0 % 10;
+                                end
+                                
+                                if (host_card_1 == 0) begin
+                                    d5 <= BLANK; d4 <= BLANK;
+                                end else begin
+                                    if (host_card_1 / 10) d5 <= host_card_1 / 10; else d5 <= BLANK;
+                                    d4 <= host_card_1 % 10;
+                                end
+                                
+                                if (host_card_2 == 0) begin
+                                    d3 <= BLANK; d2 <= BLANK;
+                                end else begin
+                                    if (host_card_2 / 10) d3 <= host_card_2 / 10; else d3 <= BLANK;
+                                    d2 <= host_card_2 % 10;
+                                end
+                                
+                                if (host_card_3 == 0) begin
+                                    d1 <= BLANK; d0 <= BLANK;
+                                end else begin
+                                    if (host_card_3 / 10) d1 <= host_card_3 / 10; else d1 <= BLANK;
+                                    d0 <= host_card_3 % 10;
+                                end
+                            end else begin
+                                if (host_card_1 == 0) begin
+                                    d7 <= BLANK; d6 <= BLANK;
+                                end else begin
+                                    if (host_card_1 / 10) d7 <= host_card_1 / 10; else d7 <= BLANK;
+                                    d6 <= host_card_1 % 10;
+                                end
+                                
+                                if (host_card_2 == 0) begin
+                                    d5 <= BLANK; d4 <= BLANK;
+                                end else begin
+                                    if (host_card_2 / 10) d5 <= host_card_2 / 10; else d5 <= BLANK;
+                                    d4 <= host_card_2 % 10;
+                                end
+                                
+                                if (host_card_3 == 0) begin
+                                    d3 <= BLANK; d2 <= BLANK;
+                                end else begin
+                                    if (host_card_3 / 10) d3 <= host_card_3 / 10; else d3 <= BLANK;
+                                    d2 <= host_card_3 % 10;
+                                end
+                                
+                                if (host_card_4 == 0) begin
+                                    d1 <= BLANK; d0 <= BLANK;
+                                end else begin
+                                    if (host_card_4 / 10) d1 <= host_card_4 / 10; else d1 <= BLANK;
+                                    d0 <= host_card_4 % 10;
+                                end
+                            end
                         end
                         default: begin
                             d3 <= 6'd34;

@@ -21,28 +21,18 @@ module serve(
     else fast_rand <= fast_rand + 6'd1;
   end
 
-  reg [15:0] shuffle_timer;
   reg [5:0]  swap_range;
 
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      shuffle_timer <= 16'd0;
       swap_range <= 6'd0;
-    end else if (shuffle) begin
+    end else if (!pull) begin
+      // Continuously shuffle in the background when not pulling cards
+      cards[swap_range] <= cards[fast_rand];
+      cards[fast_rand]  <= cards[swap_range];
 
-      if (shuffle_timer == 16'd50000) begin
-        shuffle_timer <= 16'd0;
-
-        cards[swap_range] <= cards[fast_rand];
-        cards[fast_rand]  <= cards[swap_range];
-
-        if (swap_range == 6'd51) swap_range <= 6'd0;
-        else swap_range <= swap_range + 6'd1;
-      end else begin
-        shuffle_timer <= shuffle_timer + 16'd1;
-      end
-    end else begin
-      shuffle_timer <= 16'd0;
+      if (swap_range == 6'd51) swap_range <= 6'd0;
+      else swap_range <= swap_range + 6'd1;
     end
   end
 

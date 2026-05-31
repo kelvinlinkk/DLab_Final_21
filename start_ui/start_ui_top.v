@@ -179,6 +179,12 @@ module start_ui_top(
     wire [3:0] card_4;
     wire card_left_right;
     wire [1:0] lose_win;
+    wire [3:0] host_card_0;
+    wire [3:0] host_card_1;
+    wire [3:0] host_card_2;
+    wire [3:0] host_card_3;
+    wire [3:0] host_card_4;
+    wire host_card_left_right;
     start_ui_host startui_h(
         .clk(sys_clk),
         .rst_n(sys_rst_n),
@@ -200,7 +206,13 @@ module start_ui_top(
         .backtogh_h(backtogh_h),
         .state_h(state_h_to_before_seg),
         .player_count(player_count),
-        .ai_level(ai_level)
+        .ai_level(ai_level),
+        .host_card_0(host_card_0),
+        .host_card_1(host_card_1),
+        .host_card_2(host_card_2),
+        .host_card_3(host_card_3),
+        .host_card_4(host_card_4),
+        .host_card_left_right(host_card_left_right)
     );
     game_player game_player(
         .clk(sys_clk),
@@ -256,6 +268,12 @@ module start_ui_top(
         .card_2(card_2),
         .card_3(card_3),
         .card_4(card_4),
+        .host_card_0(host_card_0),
+        .host_card_1(host_card_1),
+        .host_card_2(host_card_2),
+        .host_card_3(host_card_3),
+        .host_card_4(host_card_4),
+        .host_card_left_right(host_card_left_right),
         .card_left_right(card_left_right),
         .d0(d0),
         .d1(d1),
