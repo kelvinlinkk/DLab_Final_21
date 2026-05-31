@@ -41,6 +41,9 @@ module start_ui_host (
     localparam S_PLAYER_TURN       = 4'd6;
     localparam S_HOST_TURN         = 4'd7;
     localparam S_GAME_OVER         = 4'd8;
+    localparam S_WAIT_BETS         = 4'd9;
+    localparam S_SEND_RESTART      = 4'd10;
+    localparam S_WAIT_INSURANCE    = 4'd11;
 
     localparam BLANK  = 6'd34;
     localparam NUM_0  = 6'd0;
@@ -68,6 +71,7 @@ module start_ui_host (
     wire [3:0] drawn_card;
     reg [2:0] current_player;
     reg [1:0] deal_step;
+    reg [3:0] players_ready;
 
     reg [7:0] tx_reg_1, tx_reg_2, tx_reg_3, tx_reg_4;
     reg tx_valid_1, tx_valid_2, tx_valid_3, tx_valid_4;
@@ -104,8 +108,19 @@ module start_ui_host (
     tx tx_inst3 (.clk(clk), .rst_n(rst_n), .data_in(tx_reg_3), .valid(tx_valid_3), .signal_out(signal_out_3), .busy(tx_busy_3));
     tx tx_inst4 (.clk(clk), .rst_n(rst_n), .data_in(tx_reg_4), .valid(tx_valid_4), .signal_out(signal_out_4), .busy(tx_busy_4));
 
-    assign host_total_score = cards[0] + cards[1] + cards[2] + cards[3] + 
-                              cards[4] + cards[5] + cards[6] + cards[7] + cards[8];
+    wire [5:0] pre_sum;
+    wire [3:0] val0 = (cards[0] > 4'd10) ? 4'd10 : cards[0];
+    wire [3:0] val1 = (cards[1] > 4'd10) ? 4'd10 : cards[1];
+    wire [3:0] val2 = (cards[2] > 4'd10) ? 4'd10 : cards[2];
+    wire [3:0] val3 = (cards[3] > 4'd10) ? 4'd10 : cards[3];
+    wire [3:0] val4 = (cards[4] > 4'd10) ? 4'd10 : cards[4];
+    wire [3:0] val5 = (cards[5] > 4'd10) ? 4'd10 : cards[5];
+    wire [3:0] val6 = (cards[6] > 4'd10) ? 4'd10 : cards[6];
+    wire [3:0] val7 = (cards[7] > 4'd10) ? 4'd10 : cards[7];
+    wire [3:0] val8 = (cards[8] > 4'd10) ? 4'd10 : cards[8];
+
+    assign pre_sum = val0 + val1 + val2 + val3 + val4 + val5 + val6 + val7 + val8;
+    assign host_total_score = ((val0==4'd1 | val1==4'd1 | val2==4'd1 | val3==4'd1 | val4==4'd1 | val5==4'd1 | val6==4'd1 | val7==4'd1 | val8==4'd1) & (pre_sum<6'd12)) ? (pre_sum+6'd10) : pre_sum;
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -119,6 +134,7 @@ module start_ui_host (
             host_card_count  <= 4'd0;
             current_player   <= 3'd1;
             deal_step        <= 2'd0;
+            players_ready    <= 4'd0;
 
             tx_reg_1         <= 8'b0;
             tx_reg_2         <= 8'b0;
@@ -153,6 +169,7 @@ module start_ui_host (
                 S_IDLE: begin
                     backtogh_h <= 1'b0;
                     host_card_left_right <= 1'b0;
+                    players_ready <= 4'd0;
                     if (startstartui && ishost) begin
                         state_h <= S_PLAYER;
                     end
@@ -209,12 +226,12 @@ module start_ui_host (
                 S_HOST_TWO_CARDS: begin
                     if (cards[1] != 4'd0) begin
                         pull_reg <= 1'b0;
-                        state_h  <= S_PLAYER_TWO_CARDS;
-                        
                         if (cards[1] == 4'd1) begin
+                            state_h  <= S_WAIT_INSURANCE;
                             tx_reg_1 <= 8'b10000001; tx_reg_2 <= 8'b10000001;
                             tx_reg_3 <= 8'b10000001; tx_reg_4 <= 8'b10000001;
                         end else begin
+                            state_h  <= S_PLAYER_TWO_CARDS;
                             tx_reg_1 <= 8'b10000000; tx_reg_2 <= 8'b10000000;
                             tx_reg_3 <= 8'b10000000; tx_reg_4 <= 8'b10000000;
                         end
@@ -228,6 +245,21 @@ module start_ui_host (
                             cards[host_card_count] <= drawn_card;
                             host_card_count        <= host_card_count + 4'd1;
                         end
+                    end
+                end
+                
+                S_WAIT_INSURANCE: begin
+                    if (rx_valid_1 && rx_wire_1 == 8'b00000100) players_ready[0] <= 1'b1;
+                    if (rx_valid_2 && rx_wire_2 == 8'b00000100) players_ready[1] <= 1'b1;
+                    if (rx_valid_3 && rx_wire_3 == 8'b00000100) players_ready[2] <= 1'b1;
+                    if (rx_valid_4 && rx_wire_4 == 8'b00000100) players_ready[3] <= 1'b1;
+
+                    if ((player_count == 3'd1 && players_ready[0]) ||
+                        (player_count == 3'd2 && players_ready[1:0] == 2'b11) ||
+                        (player_count == 3'd3 && players_ready[2:0] == 3'b111) ||
+                        (player_count == 3'd4 && players_ready[3:0] == 4'b1111)) begin
+                        state_h <= S_PLAYER_TWO_CARDS;
+                        players_ready <= 4'd0;
                     end
                 end
 
@@ -245,10 +277,12 @@ module start_ui_host (
                                             3'd2: tx_reg_2 <= {4'b1010, drawn_card};
                                             3'd3: tx_reg_3 <= {4'b1010, drawn_card};
                                             3'd4: tx_reg_4 <= {4'b1010, drawn_card};
+                                            default: ;
                                         endcase
                                         case (current_player)
                                             3'd1: tx_valid_1 <= 1'b1; 3'd2: tx_valid_2 <= 1'b1;
                                             3'd3: tx_valid_3 <= 1'b1; 3'd4: tx_valid_4 <= 1'b1;
+                                            default: ;
                                         endcase
                                         deal_step <= 2'd1;
                                     end
@@ -268,10 +302,12 @@ module start_ui_host (
                                         3'd2: tx_reg_2 <= {4'b1011, drawn_card};
                                         3'd3: tx_reg_3 <= {4'b1011, drawn_card};
                                         3'd4: tx_reg_4 <= {4'b1011, drawn_card};
+                                        default: ;
                                     endcase
                                     case (current_player)
                                         3'd1: tx_valid_1 <= 1'b1; 3'd2: tx_valid_2 <= 1'b1;
                                         3'd3: tx_valid_3 <= 1'b1; 3'd4: tx_valid_4 <= 1'b1;
+                                        default: ;
                                     endcase
                                     deal_step <= 2'd3;
                                 end
@@ -282,6 +318,7 @@ module start_ui_host (
                                     current_player <= current_player + 3'd1;
                                 end
                             end
+                            default: ;
                         endcase
                     end else begin
                         current_player <= 3'd1;
@@ -358,6 +395,7 @@ module start_ui_host (
                                             deal_step <= 2'd1;
                                         end
                                     end
+                                    default: ;
                                 endcase
                             end
                             2'd1: begin
@@ -369,6 +407,7 @@ module start_ui_host (
                                     deal_step <= 2'd0;
                                 end
                             end
+                            default: ;
                         endcase
                     end else begin
                         state_h <= S_HOST_TURN;
@@ -394,27 +433,60 @@ module start_ui_host (
                     
                     if (btnD && host_total_score >= 6'd17) begin // Stand only if score >= 17
                         state_h <= S_GAME_OVER;
+                        pull_reg <= 1'b0;
                     end
                 end
 
                 S_GAME_OVER: begin
+                    if (btnC_pulse) begin
+                        state_h <= S_SEND_RESTART;
+                    end else if (!tx_busy_1 && !tx_valid_1 && !tx_busy_2 && !tx_valid_2 && !tx_busy_3 && !tx_valid_3 && !tx_busy_4 && !tx_valid_4) begin
+                        if (!pull_reg) begin
+                            pull_reg <= 1'b1;
+                            tx_reg_1   <= {3'b100, host_total_score[4:0]};
+                            tx_reg_2   <= {3'b100, host_total_score[4:0]};
+                            tx_reg_3   <= {3'b100, host_total_score[4:0]};
+                            tx_reg_4   <= {3'b100, host_total_score[4:0]};
+                            
+                            tx_valid_1 <= 1'b1;
+                            tx_valid_2 <= 1'b1;
+                            tx_valid_3 <= 1'b1;
+                            tx_valid_4 <= 1'b1;
+                        end
+                    end
+                end
+                
+                S_SEND_RESTART: begin
+                    pull_reg <= 1'b0;
                     if (!tx_busy_1 && !tx_valid_1 && !tx_busy_2 && !tx_valid_2 && !tx_busy_3 && !tx_valid_3 && !tx_busy_4 && !tx_valid_4) begin
-                        tx_reg_1   <= {3'b100, host_total_score[4:0]};
-                        tx_reg_2   <= {3'b100, host_total_score[4:0]};
-                        tx_reg_3   <= {3'b100, host_total_score[4:0]};
-                        tx_reg_4   <= {3'b100, host_total_score[4:0]};
+                        tx_reg_1   <= 8'b11111111;
+                        tx_reg_2   <= 8'b11111111;
+                        tx_reg_3   <= 8'b11111111;
+                        tx_reg_4   <= 8'b11111111;
                         
                         tx_valid_1 <= 1'b1;
                         tx_valid_2 <= 1'b1;
                         tx_valid_3 <= 1'b1;
                         tx_valid_4 <= 1'b1;
+                        state_h    <= S_WAIT_BETS;
                     end
+                end
 
-                    if (btnC_pulse) begin
+                S_WAIT_BETS: begin
+                    if (rx_valid_1 && rx_wire_1 == 8'b00000011) players_ready[0] <= 1'b1;
+                    if (rx_valid_2 && rx_wire_2 == 8'b00000011) players_ready[1] <= 1'b1;
+                    if (rx_valid_3 && rx_wire_3 == 8'b00000011) players_ready[2] <= 1'b1;
+                    if (rx_valid_4 && rx_wire_4 == 8'b00000011) players_ready[3] <= 1'b1;
+
+                    if ((player_count == 3'd1 && players_ready[0]) ||
+                        (player_count == 3'd2 && players_ready[1:0] == 2'b11) ||
+                        (player_count == 3'd3 && players_ready[2:0] == 3'b111) ||
+                        (player_count == 3'd4 && players_ready[3:0] == 4'b1111)) begin
                         state_h         <= S_SHUFFLE;
                         host_card_count <= 4'd0;
                         current_player  <= 3'd1;
                         deal_step       <= 2'd0;
+                        players_ready   <= 4'd0;
                         for (k = 0; k < 9; k = k + 1) begin
                             cards[k] <= 4'd0;
                         end
