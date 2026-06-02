@@ -435,7 +435,7 @@ module start_ui_host (
                     if (btnL) host_card_left_right <= 1'b0;
                     if (btnR) host_card_left_right <= 1'b1;
 
-                    if (btnC) begin // Manually draw a card
+                    if (btnU&& host_total_score < 6'd21) begin // Manually draw a card
                         if (!pull_reg) begin
                             pull_reg <= 1'b1;
                         end
@@ -504,6 +504,7 @@ module start_ui_host (
                         current_player  <= 3'd1;
                         deal_step       <= 2'd0;
                         players_ready   <= 4'd0;
+                        host_card_left_right<=1'b0;
                         for (k = 0; k < 9; k = k + 1) begin
                             cards[k] <= 4'd0;
                         end

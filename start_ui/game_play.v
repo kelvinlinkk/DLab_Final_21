@@ -226,25 +226,16 @@ module game_player(
       insurance:
       begin
         if (btnU) begin
-            if (money_you_have >= {4'd0,insurance_bet} + 15'd20) begin
-                if (insurance_bet + 15'd20 <= (money_you_bet >> 1))
-                    insurance_bet <= insurance_bet + 15'd20;
+            if (money_you_have >= money_you_bet*3/2) begin
+                    insurance_bet <= money_you_bet/2;
+                    insurance_yn <= 1'd1;
             end
         end
         if (btnD) begin
-            if (insurance_bet >= 15'd20)
-                insurance_bet <= insurance_bet - 15'd20;
-        end
-        if (btnL) begin
-            if (money_you_have > 0)
-                insurance_bet <= (money_you_have > (money_you_bet >> 1)) ? (money_you_bet >> 1) : money_you_have;
+                insurance_bet <= 15'd0;
+                insurance_yn <= 1'd0;
         end
         if (btnC) begin
-            if (insurance_bet > 0) begin
-                insurance_yn <= 1'd1;
-            end else begin
-                insurance_yn <= 1'd0;
-            end
             tx <= 8'b00000100; // 傳送確認訊號
             tx_valid <= 1'b1;
             state <= card_get_0;
@@ -275,7 +266,7 @@ module game_player(
       end
       card_get_2:
       begin
-        if (player_sum > 6'd21) begin
+        if (player_sum >= 6'd21) begin
           tx <= 8'b00000010; // Auto-stand
           tx_valid <= 1'b1;
           state <= wait_host;
@@ -307,7 +298,7 @@ module game_player(
       end
       card_get_3:
       begin
-        if (player_sum > 6'd21) begin
+        if (player_sum >= 6'd21) begin
             tx <= 8'b00000010; // Auto-stand
             tx_valid <= 1'b1;
             state <= wait_host;
@@ -337,7 +328,7 @@ module game_player(
       end
       card_get_4:
       begin
-        if (player_sum > 6'd21) begin
+        if (player_sum >= 6'd21) begin
           tx <= 8'b00000010; // Auto-stand
           tx_valid <= 1'b1;
           state <= wait_host;
@@ -406,13 +397,12 @@ module game_player(
                     next_money <= money_you_have + (insurance_bet * 2); // 淨賺保險金
                     money_you_have <= money_you_have + (insurance_bet * 2);
                 end else begin
-                    // 扣除主注，獲得保險金
-                    if (money_you_have + (insurance_bet * 2) >= money_you_bet) begin
-                        next_money <= money_you_have + (insurance_bet * 2) - money_you_bet;
-                        money_you_have <= money_you_have + (insurance_bet * 2) - money_you_bet;
-                    end else begin
-                        next_money <= 15'd0;
-                        money_you_have <= 15'd0;
+                        if (money_you_have + (insurance_bet * 2) >= money_you_bet) begin
+                            next_money <= money_you_have + (insurance_bet * 2) - money_you_bet;
+                            money_you_have <= money_you_have + (insurance_bet * 2) - money_you_bet;
+                        end else begin
+                            next_money <= 15'd0;
+                            money_you_have <= 15'd0;
                     end
                 end
                 lose_win <= 2'd1; // 顯示玩家輸 (因為莊家21點)
@@ -495,6 +485,7 @@ module game_player(
       end
       S_WAIT_RESTART:
       begin
+        money_you_bet   <= 15'd0;
         if (rx_valid && rx_wire == 8'b11111111) begin // Receive RESTART signal from Host
             state <= S_money_p1;
         end

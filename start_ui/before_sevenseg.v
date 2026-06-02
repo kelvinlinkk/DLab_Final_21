@@ -100,7 +100,45 @@ module before_sevenseg(
             TOP_START_GUEST:
             begin
                 case(state_game_play)
-                4'd2, 4'd11: begin
+                4'd2: begin
+                if(money_you_bet_thousands == 6'd0)
+                begin
+                    if(money_you_bet_hundreds == 6'd0)
+                    begin
+                        if(money_you_bet_tens == 6'd0)
+                        begin
+                            d7 <= BLANK;
+                            d6 <= BLANK;
+                            d5 <= BLANK;
+                            d4 <= money_you_bet_ones;
+                        end
+                        else begin
+                            d7 <= BLANK;
+                            d6 <= BLANK;
+                            d5 <= money_you_bet_tens;
+                            d4 <= money_you_bet_ones;
+                        end
+                    end
+                    else begin
+                        d7 <= BLANK;
+                        d6 <= money_you_bet_hundreds;
+                        d5 <= money_you_bet_tens;
+                        d4 <= money_you_bet_ones;
+                    end
+                end
+                else begin
+                    d7 <= money_you_bet_thousands;
+                    d6 <= money_you_bet_hundreds;
+                    d5 <= money_you_bet_tens;
+                    d4 <= money_you_bet_ones;
+                end
+                if(insurance_yn==1'd1)begin
+                    d0<=6'd32;
+                end else begin
+                    d0<=6'd22;
+                end
+                end
+                4'd11: begin
                     rgb1_r <= 0;
                     rgb1_g <= 0;
                     rgb1_b <= 0;
@@ -181,7 +219,6 @@ module before_sevenseg(
                     d0 <= money_you_bet_ones;
                 end
                 end
-
                 4'd9, 4'd12, 4'd13: begin // Settlement states
                     rgb1_r <= 0;
                     rgb1_g <= 0;
@@ -262,9 +299,13 @@ module before_sevenseg(
                     d0 <= BLANK;
                 end
                 4'd3: begin // card_get_0 (DEBUG)
-                    d3 <= 6'd12; // C
-                    d2 <= BLANK;
-                    d1 <= NUM_0;
+                    d7<= 6'd17; // H
+                    d6 <= 6'd0; // O
+                    d5<= 6'd20; // L
+                    d4<=6'd13; // d
+                    d3 <= BLANK;
+                    d2 <= 6'd0;  // O
+                    d1 <= 6'd22; // n
                     d0 <= BLANK;
                 end
                 4'd4: begin // card_get_1 (DEBUG)
