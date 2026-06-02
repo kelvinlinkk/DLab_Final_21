@@ -235,8 +235,8 @@ module start_ui_host (
                             tx_reg_1 <= 8'b10000000; tx_reg_2 <= 8'b10000000;
                             tx_reg_3 <= 8'b10000000; tx_reg_4 <= 8'b10000000;
                         end
-                        tx_valid_1 <= 1'b1; tx_valid_2 <= 1'b1;
-                        tx_valid_3 <= 1'b1; tx_valid_4 <= 1'b1;
+                        tx_valid_1 <= (player_count >= 3'd1); tx_valid_2 <= (player_count >= 3'd2);
+                        tx_valid_3 <= (player_count >= 3'd3); tx_valid_4 <= (player_count == 3'd4);
                     end else begin
                         if (!pull_reg) begin
                             pull_reg <= 1'b1;
@@ -323,6 +323,7 @@ module start_ui_host (
                     end else begin
                         current_player <= 3'd1;
                         state_h        <= S_PLAYER_TURN;
+                        deal_step      <= 2'd3;
                     end
                 end
 
@@ -338,6 +339,7 @@ module start_ui_host (
                                             end
                                         end else if (rx_valid_1 && rx_wire_1 == 8'b00000010) begin
                                             current_player <= current_player + 3'd1;
+                                            deal_step <= 2'd3;
                                         end
                                         
                                         if (pull_reg) begin
@@ -354,6 +356,7 @@ module start_ui_host (
                                             end
                                         end else if (rx_valid_2 && rx_wire_2 == 8'b00000010) begin
                                             current_player <= current_player + 3'd1;
+                                            deal_step <= 2'd3;
                                         end
                                         
                                         if (pull_reg) begin
@@ -370,6 +373,7 @@ module start_ui_host (
                                             end
                                         end else if (rx_valid_3 && rx_wire_3 == 8'b00000010) begin
                                             current_player <= current_player + 3'd1;
+                                            deal_step <= 2'd3;
                                         end
                                         
                                         if (pull_reg) begin
@@ -386,6 +390,7 @@ module start_ui_host (
                                             end
                                         end else if (rx_valid_4 && rx_wire_4 == 8'b00000010) begin
                                             current_player <= current_player + 3'd1;
+                                            deal_step <= 2'd3;
                                         end
                                         
                                         if (pull_reg) begin
@@ -403,10 +408,22 @@ module start_ui_host (
                                 deal_step <= 2'd2;
                             end
                             2'd2: begin
-                                if (!tx_busy_1 && !tx_valid_1 && !tx_busy_2 && !tx_valid_2 && !tx_busy_3 && !tx_valid_3 && !tx_busy_4 && !tx_valid_4) begin
-                                    deal_step <= 2'd0;
-                                end
-                            end
+                                        if (!tx_busy_1 && !tx_valid_1 && !tx_busy_2 && !tx_valid_2 && !tx_busy_3 && !tx_valid_3 && !tx_busy_4 && !tx_valid_4) begin
+                                            deal_step <= 2'd0;
+                                        end
+                                    end
+                            2'd3: begin
+                                        if (!tx_busy_1 && !tx_valid_1 && !tx_busy_2 && !tx_valid_2 && !tx_busy_3 && !tx_valid_3 && !tx_busy_4 && !tx_valid_4) begin
+                                            case (current_player)
+                                                3'd1: begin tx_reg_1 <= 8'b11110000; tx_valid_1 <= 1'b1; end
+                                                3'd2: begin tx_reg_2 <= 8'b11110000; tx_valid_2 <= 1'b1; end
+                                                3'd3: begin tx_reg_3 <= 8'b11110000; tx_valid_3 <= 1'b1; end
+                                                3'd4: begin tx_reg_4 <= 8'b11110000; tx_valid_4 <= 1'b1; end
+                                                default: ;
+                                            endcase
+                                            deal_step <= 2'd0;
+                                        end
+                                    end
                             default: ;
                         endcase
                     end else begin
@@ -448,10 +465,10 @@ module start_ui_host (
                             tx_reg_3   <= {3'b100, host_total_score[4:0]};
                             tx_reg_4   <= {3'b100, host_total_score[4:0]};
                             
-                            tx_valid_1 <= 1'b1;
-                            tx_valid_2 <= 1'b1;
-                            tx_valid_3 <= 1'b1;
-                            tx_valid_4 <= 1'b1;
+                            tx_valid_1 <= (player_count >= 3'd1);
+                            tx_valid_2 <= (player_count >= 3'd2);
+                            tx_valid_3 <= (player_count >= 3'd3);
+                            tx_valid_4 <= (player_count == 3'd4);
                         end
                     end
                 end
@@ -464,10 +481,10 @@ module start_ui_host (
                         tx_reg_3   <= 8'b11111111;
                         tx_reg_4   <= 8'b11111111;
                         
-                        tx_valid_1 <= 1'b1;
-                        tx_valid_2 <= 1'b1;
-                        tx_valid_3 <= 1'b1;
-                        tx_valid_4 <= 1'b1;
+                        tx_valid_1 <= (player_count >= 3'd1);
+                        tx_valid_2 <= (player_count >= 3'd2);
+                        tx_valid_3 <= (player_count >= 3'd3);
+                        tx_valid_4 <= (player_count == 3'd4);
                         state_h    <= S_WAIT_BETS;
                     end
                 end

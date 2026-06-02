@@ -273,7 +273,7 @@ module before_sevenseg(
                     d1 <= NUM_1;
                     d0 <= BLANK;
                 end
-                4'd5: begin
+                4'd5, 4'd15: begin
                         rgb1_r <= 0;
                         rgb1_g <= 0;
                         rgb1_b <= 0;

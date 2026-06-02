@@ -46,6 +46,7 @@ module game_player(
   localparam S_money_p1 = 4'd11;
   localparam S_WAIT_RESTART = 4'd13;
   localparam force_stand = 4'd14;
+  localparam wait_my_turn = 4'd15;
   reg rst_reg = 1'd0;
   
   // player info
@@ -251,7 +252,7 @@ module game_player(
       end
       card_get_0:
       begin
-        if(rx_valid && rx_wire[7] == 1'b1)
+        if(rx_valid && rx_wire[7:4] == 4'b1010)
         begin
           cards[0]<=rx_wire[3:0];
           state<=card_get_1;
@@ -259,10 +260,17 @@ module game_player(
       end
       card_get_1:
       begin
-        if(rx_valid && rx_wire[7] == 1'b1)
+        if(rx_valid && rx_wire[7:4] == 4'b1011)
         begin
           cards[1]<=rx_wire[3:0];
-          state<=card_get_2;
+          state<=wait_my_turn;
+        end
+      end
+      wait_my_turn:
+      begin
+        if(rx_valid && rx_wire == 8'b11110000)
+        begin
+          state <= card_get_2;
         end
       end
       card_get_2:
@@ -291,7 +299,7 @@ module game_player(
           // Wait for the 3rd card, then auto-stand in card_get_3
         end
         end
-        if(rx_valid && rx_wire[7] == 1'b1)
+        if(rx_valid && rx_wire[7:4] == 4'b1100)
         begin
           cards[2]<=rx_wire[3:0];
           state<=card_get_3;
@@ -320,7 +328,7 @@ module game_player(
               state<=wait_host;
             end
         end
-        if(rx_valid && rx_wire[7] == 1'b1 && !double_in)
+        if(rx_valid && rx_wire[7:4] == 4'b1100 && !double_in)
         begin
           cards[3]<=rx_wire[3:0];
           card_left_right <= 1'd1; // Auto-shift when 4th card is received
@@ -354,7 +362,7 @@ module game_player(
         card_left_right <= 1'd1;
         end
         end
-        if(rx_valid && rx_wire[7] == 1'b1)
+        if(rx_valid && rx_wire[7:4] == 4'b1100)
         begin
           cards[4]<=rx_wire[3:0];
           card_left_right <= 1'd0;
@@ -378,7 +386,7 @@ module game_player(
         begin
         card_left_right <= 1'd1;
         end
-        if(rx_valid && rx_wire[7] == 1'b1)
+        if(rx_valid && rx_wire[7:5] == 3'b100)
         begin
           host_card<=rx_wire[4:0];
           next_money <= money_you_have;
