@@ -237,8 +237,8 @@ module before_sevenseg(
                 end
                 end
                 4'd9, 4'd12, 4'd13: begin // Settlement states
-                    if (player_have_21_point == 1'd1 && lose_win == 2'd3) begin
-                        rgb1_state <= 4'd0; // Rainbow for Blackjack
+                    if ((player_have_21_point == 1'd1 || card_4 != 4'd0) && lose_win == 2'd3) begin
+                        rgb1_state <= 4'd0;
                     end else if (lose_win==2'd1) begin
                         rgb1_state <= 4'd7;
                     end else if (lose_win==2'd2) begin
@@ -617,6 +617,17 @@ module before_sevenseg(
                         end
                         H_PLAYER_TURN: begin
                             rgb1_state <= 4'd6;
+                            d6 <= host_card_1 % 10;
+                            if (host_card_1 == 0) begin
+                            d7 <= BLANK;
+                            d6 <= BLANK;
+                            end else begin
+                            if (host_card_1 / 10) begin
+                            d7 <= host_card_1 / 10;
+                            end else begin
+                            d7 <= BLANK;
+                            end
+                            end
                             d3 <= 6'd23; // P
                             d2 <= 6'd20; // L
                             d1 <= 6'd10; // A

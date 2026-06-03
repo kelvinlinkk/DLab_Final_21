@@ -362,8 +362,8 @@ module start_ui_top(
                 if (lose_win == 2'd1) sound_id <= 4'd1; // LOSE
                 else if (lose_win == 2'd2) sound_id <= 4'd3; // TIE
                 else if (lose_win == 2'd3) begin
-                    if (player_have_21_point) sound_id <= 4'd8; // BJ
-                    else sound_id <= 4'd0; // WIN
+                    if (player_have_21_point || card_4 != 4'd0) sound_id <= 4'd8; // BJ or 5-Card Charlie
+                    else sound_id <= 4'd0; // Normal WIN
                 end
             end
             // 2. 下注音效

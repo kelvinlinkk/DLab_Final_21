@@ -14,12 +14,16 @@ module serve(
     end
   end
 
-  reg [5:0] fast_rand;
+  reg [15:0] lfsr;
   always @(posedge clk or negedge rst_n) begin
-    if (!rst_n) fast_rand <= 6'd0;
-    else if (fast_rand == 6'd51) fast_rand <= 6'd0;
-    else fast_rand <= fast_rand + 6'd1;
+    if (!rst_n) begin
+      lfsr <= 16'hACE1; // Non-zero initial seed
+    end else begin
+      lfsr <= {lfsr[14:0], lfsr[15] ^ lfsr[13] ^ lfsr[12] ^ lfsr[10]}; // Fibonacci LFSR
+    end
   end
+  
+  wire [5:0] fast_rand = (lfsr % 16'd52);
 
   reg [5:0]  swap_range;
 
