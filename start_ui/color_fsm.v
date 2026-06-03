@@ -1,5 +1,6 @@
 module color_fsm(
     input slow_clk,
+    input sys_clk,
     input [3:0] rgb1_state,
     output rgb1_r,
     output rgb1_g,
@@ -10,17 +11,17 @@ module color_fsm(
     reg [7:0] g = 0;
     reg [7:0] b = 0;
     pwm_generator rgb1r(
-        .clk(slow_clk),
+        .clk(sys_clk),
         .duty(r),
         .pwm_out(rgb1_r)
     );
     pwm_generator rgb1g(
-        .clk(slow_clk),
+        .clk(sys_clk),
         .duty(g),
         .pwm_out(rgb1_g)
     );
     pwm_generator rgb1b(
-        .clk(slow_clk),
+        .clk(sys_clk),
         .duty(b),
         .pwm_out(rgb1_b)
     );
@@ -28,7 +29,7 @@ module color_fsm(
     always @(posedge slow_clk)
     begin
         if(rgb1_state == 4'd6) begin
-            state <= 4'd6;
+            state   <= 4'd6;
             restart <= 1'd0;
         end 
         else if(rgb1_state == 4'd7)
@@ -37,15 +38,18 @@ module color_fsm(
             state <= 4'd8;
         else if(rgb1_state == 4'd9)
             state <= 4'd9;
-        else if((rgb1_state == 4'd0)&&(restart == 1'd0)) begin
-            state <= 4'd11;
-            restart <=1'd1;
+        else if(rgb1_state == 4'd0) begin
+            if (restart == 1'd0) begin
+                state   <= 4'd11;
+                restart <= 1'd1;
+            end
+            // IF restart is 1, do NOT overwrite 'state'. Let the case statement run!
         end
-        else // default
-            state <= 4'd6;
+        else begin
+            state   <= 4'd6;
+            restart <= 1'd0;
+        end
         case(state)
-        
-        // (0,0,0) -> (50,0,0)
         11:
         begin
             if(r < 50)
@@ -124,8 +128,9 @@ module color_fsm(
                 r <= r + 1;
                 b <= b - 1;
             end
-            else
-                state <= 0;
+            else begin
+                state <= 0; // Seamlessly loops rainbow sequence
+            end
         end
         
         6: // no rgb

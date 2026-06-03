@@ -28,7 +28,11 @@ module start_ui_host (
     output [3:0] host_card_2,
     output [3:0] host_card_3,
     output [3:0] host_card_4,
-    output reg host_card_left_right = 0,
+    output [3:0] host_card_5,
+    output [3:0] host_card_6,
+    output [3:0] host_card_7,
+    output [3:0] host_card_8,
+    output reg [3:0] host_page = 0,
     output reg host_have_21_point = 1'd0
 );
 
@@ -65,6 +69,10 @@ module start_ui_host (
     assign host_card_2 = cards[2];
     assign host_card_3 = cards[3];
     assign host_card_4 = cards[4];
+    assign host_card_5 = cards[5];
+    assign host_card_6 = cards[6];
+    assign host_card_7 = cards[7];
+    assign host_card_8 = cards[8];
     
     wire [5:0] host_total_score;
     reg shuffle_reg;
@@ -150,7 +158,7 @@ module start_ui_host (
             rx_reg_2         <= 8'b0;
             rx_reg_3         <= 8'b0;
             rx_reg_4         <= 8'b0;
-            host_card_left_right <= 1'b0;
+            host_page <= 4'd0;
             host_have_21_point <= 1'd0;
 
             for (k = 0; k < 9; k = k + 1) begin
@@ -170,7 +178,7 @@ module start_ui_host (
             case (state_h)
                 S_IDLE: begin
                     backtogh_h <= 1'b0;
-                    host_card_left_right <= 1'b0;
+                    host_page <= 4'd0;
                     players_ready <= 4'd0;
                     if (startstartui && ishost) begin
                         state_h <= S_PLAYER;
@@ -434,8 +442,8 @@ module start_ui_host (
                 end
 
                 S_HOST_TURN: begin
-                    if (btnL) host_card_left_right <= 1'b0;
-                    if (btnR) host_card_left_right <= 1'b1;
+                    if (btnL && host_page > 4'd0) host_page <= host_page - 4'd1;
+                    if (btnR && host_page < 4'd5) host_page <= host_page + 4'd1;
 
                     if (btnU&& host_total_score < 6'd21) begin // Manually draw a card
                         if (!pull_reg) begin
@@ -446,7 +454,7 @@ module start_ui_host (
                     if (pull_reg) begin // One clock cycle later, the card is ready
                         pull_reg               <= 1'b0;
                         cards[host_card_count] <= drawn_card;
-                        if (host_card_count == 4'd3) host_card_left_right <= 1'b1; // Auto shift when 4th card is drawn
+                        if (host_card_count >= 4'd4) host_page <= host_card_count - 4'd3; // Auto shift when drawing 5th+ card
                         host_card_count        <= host_card_count + 4'd1;
                     end
                     
@@ -510,7 +518,7 @@ module start_ui_host (
                         current_player  <= 3'd1;
                         deal_step       <= 2'd0;
                         players_ready   <= 4'd0;
-                        host_card_left_right<=1'b0;
+                        host_page <= 4'd0;
                         for (k = 0; k < 9; k = k + 1) begin
                             cards[k] <= 4'd0;
                         end

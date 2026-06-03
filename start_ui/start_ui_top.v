@@ -21,7 +21,8 @@ module start_ui_top(
     output signal_out_p4,
     output rgb1_r,
     output rgb1_g,
-    output rgb1_b
+    output rgb1_b,
+    output audio_out
 );
     localparam init = 4'b0000;
     localparam start_host = 4'b0001;
@@ -184,7 +185,11 @@ module start_ui_top(
     wire [3:0] host_card_2;
     wire [3:0] host_card_3;
     wire [3:0] host_card_4;
-    wire host_card_left_right;
+    wire [3:0] host_card_5;
+    wire [3:0] host_card_6;
+    wire [3:0] host_card_7;
+    wire [3:0] host_card_8;
+    wire [3:0] host_page;
     wire [3:0] rgb1_state;
     wire player_have_21_point;
     wire host_have_21_point;
@@ -215,7 +220,11 @@ module start_ui_top(
         .host_card_2(host_card_2),
         .host_card_3(host_card_3),
         .host_card_4(host_card_4),
-        .host_card_left_right(host_card_left_right),
+        .host_card_5(host_card_5),
+        .host_card_6(host_card_6),
+        .host_card_7(host_card_7),
+        .host_card_8(host_card_8),
+        .host_page(host_page),
         .host_have_21_point(host_have_21_point)
     );
     game_player game_player(
@@ -278,7 +287,11 @@ module start_ui_top(
         .host_card_2(host_card_2),
         .host_card_3(host_card_3),
         .host_card_4(host_card_4),
-        .host_card_left_right(host_card_left_right),
+        .host_card_5(host_card_5),
+        .host_card_6(host_card_6),
+        .host_card_7(host_card_7),
+        .host_card_8(host_card_8),
+        .host_page(host_page),
         .player_have_21_point(player_have_21_point),
         .host_have_21_point(host_have_21_point),
         .card_left_right(card_left_right),
@@ -293,6 +306,7 @@ module start_ui_top(
         .rgb1_state(rgb1_state)
     );
     color_fsm rgb1(
+        .sys_clk(sys_clk), // 補上遺失的系統時脈，否則 PWM 產生器會死當
         .slow_clk(clk_slow),
         .rgb1_state(rgb1_state),
         .rgb1_r(rgb1_r),
@@ -313,4 +327,82 @@ module start_ui_top(
         .seg(seg),
         .an(an)
     );
+
+    // 音效觸發邏輯與狀態追蹤
+    reg [3:0] last_state_p;
+    reg [3:0] last_state_h;
+    reg [3:0] last_card_0, last_card_1, last_card_2, last_card_3, last_card_4;
+    reg [3:0] last_host_card_0, last_host_card_1, last_host_card_2, last_host_card_3, last_host_card_4, last_host_card_5, last_host_card_6, last_host_card_7, last_host_card_8;
+
+    reg play_sound = 1'b0;
+    reg [3:0] sound_id = 4'd0;
+
+    always @(posedge sys_clk or negedge sys_rst_n) begin
+        if (!sys_rst_n) begin
+            last_state_p <= 4'd10; // S_IDLE
+            last_state_h <= 4'd0;  // S_IDLE
+            last_card_0 <= 4'd0; last_card_1 <= 4'd0; last_card_2 <= 4'd0; last_card_3 <= 4'd0; last_card_4 <= 4'd0;
+            last_host_card_0 <= 4'd0; last_host_card_1 <= 4'd0; last_host_card_2 <= 4'd0; last_host_card_3 <= 4'd0; last_host_card_4 <= 4'd0;
+            play_sound <= 1'b0;
+            sound_id <= 4'd0;
+        end else begin
+            // 預設不觸發音效 (pulse)
+            play_sound <= 1'b0;
+
+            // 更新歷史狀態
+            last_state_p <= state_game_play_to_before_seg;
+            last_state_h <= state_h_to_before_seg;
+            last_card_0 <= card_0; last_card_1 <= card_1; last_card_2 <= card_2; last_card_3 <= card_3; last_card_4 <= card_4;
+            last_host_card_0 <= host_card_0; last_host_card_1 <= host_card_1; last_host_card_2 <= host_card_2; last_host_card_3 <= host_card_3; last_host_card_4 <= host_card_4;
+            last_host_card_5 <= host_card_5; last_host_card_6 <= host_card_6; last_host_card_7 <= host_card_7; last_host_card_8 <= host_card_8;
+
+            // 1. 遊戲結算音效 (優先級最高)
+            if (last_state_p == 4'd12 && state_game_play_to_before_seg == 4'd13) begin
+                play_sound <= 1'b1;
+                if (lose_win == 2'd1) sound_id <= 4'd1; // LOSE
+                else if (lose_win == 2'd2) sound_id <= 4'd3; // TIE
+                else if (lose_win == 2'd3) begin
+                    if (player_have_21_point) sound_id <= 4'd8; // BJ
+                    else sound_id <= 4'd0; // WIN
+                end
+            end
+            // 2. 下注音效
+            else if (last_state_p == 4'd11 && state_game_play_to_before_seg == 4'd0) begin
+                play_sound <= 1'b1;
+                sound_id <= 4'd5; // BET
+            end
+            // 3. 發牌音效
+            else if ((card_0 != last_card_0 && card_0 != 0) ||
+                     (card_1 != last_card_1 && card_1 != 0) ||
+                     (card_2 != last_card_2 && card_2 != 0) ||
+                     (card_3 != last_card_3 && card_3 != 0) ||
+                     (card_4 != last_card_4 && card_4 != 0) ||
+                     (host_card_0 != last_host_card_0 && host_card_0 != 0) ||
+                     (host_card_1 != last_host_card_1 && host_card_1 != 0) ||
+                     (host_card_2 != last_host_card_2 && host_card_2 != 0) ||
+                     (host_card_3 != last_host_card_3 && host_card_3 != 0) ||
+                     (host_card_4 != last_host_card_4 && host_card_4 != 0) ||
+                     (host_card_5 != last_host_card_5 && host_card_5 != 0) ||
+                     (host_card_6 != last_host_card_6 && host_card_6 != 0) ||
+                     (host_card_7 != last_host_card_7 && host_card_7 != 0) ||
+                     (host_card_8 != last_host_card_8 && host_card_8 != 0)) begin
+                play_sound <= 1'b1;
+                sound_id <= 4'd4; // DEAL
+            end
+            // 4. 操作音效 (按鍵操作)
+            else if (pulseU_sys || pulseD_sys || pulseL_sys || pulseR_sys || pulseC_sys) begin
+                play_sound <= 1'b1;
+                sound_id <= 4'd2; // CTRL
+            end
+        end
+    end
+
+    audio_ctl audio_inst(
+        .clk(sys_clk),
+        .rst_n(sys_rst_n),
+        .play_sound(play_sound),
+        .sound_id(sound_id),
+        .audio_out(audio_out)
+    );
+
 endmodule

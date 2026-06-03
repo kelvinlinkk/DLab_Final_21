@@ -26,7 +26,11 @@ module before_sevenseg(
     input [3:0] host_card_2,
     input [3:0] host_card_3,
     input [3:0] host_card_4,
-    input host_card_left_right,
+    input [3:0] host_card_5,
+    input [3:0] host_card_6,
+    input [3:0] host_card_7,
+    input [3:0] host_card_8,
+    input [3:0] host_page,
     input player_have_21_point,
     input host_have_21_point,
     output reg [5:0] d0,
@@ -63,13 +67,29 @@ module before_sevenseg(
     // localparam H_PLAYER_COUNT     = 4'd1;
     // localparam H_AI_LEVEL         = 4'd2;
     localparam H_SHUFFLE          = 4'd3;
-    localparam H_HOST_TWO_CARDS   = 4'd4;
-    localparam H_PLAYER_TWO_CARDS = 4'd5;
-    localparam H_PLAYER_TURN      = 4'd6;
-    localparam H_HOST_TURN        = 4'd7;
-    localparam H_GAME_OVER        = 4'd8;
+    localparam H_HOST_TWO_CARDS   = 4'b0100;
+    localparam H_PLAYER_TWO_CARDS = 4'b0101;
+    localparam H_PLAYER_TURN      = 4'b0110;
+    localparam H_HOST_TURN        = 4'b0111;
+    localparam H_GAME_OVER        = 4'b1000;
     localparam H_WAIT_BETS        = 4'd9;
     localparam H_WAIT_INSURANCE   = 4'd11;
+
+    wire [3:0] h_cards_array [0:8];
+    assign h_cards_array[0] = host_card_0;
+    assign h_cards_array[1] = host_card_1;
+    assign h_cards_array[2] = host_card_2;
+    assign h_cards_array[3] = host_card_3;
+    assign h_cards_array[4] = host_card_4;
+    assign h_cards_array[5] = host_card_5;
+    assign h_cards_array[6] = host_card_6;
+    assign h_cards_array[7] = host_card_7;
+    assign h_cards_array[8] = host_card_8;
+
+    wire [3:0] disp_h0 = h_cards_array[host_page];
+    wire [3:0] disp_h1 = (host_page < 8) ? h_cards_array[host_page + 1] : 4'd0;
+    wire [3:0] disp_h2 = (host_page < 7) ? h_cards_array[host_page + 2] : 4'd0;
+    wire [3:0] disp_h3 = (host_page < 6) ? h_cards_array[host_page + 3] : 4'd0;
 
     // player states (some matching old code)
     localparam S_IDLE     = 4'd0;
@@ -87,6 +107,7 @@ module before_sevenseg(
         d5 <= BLANK;
         d6 <= BLANK;
         d7 <= BLANK;
+        rgb1_state <= 4'd6; // 加入這行！防止 latch 導致燈光卡死
         if(ishost==1'b0) begin
         case(state)
             TOP_IDLE:
@@ -140,7 +161,9 @@ module before_sevenseg(
                 end
                 end
                 4'd11: begin
-                    if (lose_win==2'd1) begin
+                    if (player_have_21_point == 1'd1 && lose_win == 2'd3) begin
+                        rgb1_state <= 4'd0; // Rainbow for Blackjack
+                    end else if (lose_win==2'd1) begin
                         rgb1_state <= 4'd7;
                     end else if (lose_win==2'd2) begin
                         rgb1_state <= 4'd8;
@@ -214,7 +237,9 @@ module before_sevenseg(
                 end
                 end
                 4'd9, 4'd12, 4'd13: begin // Settlement states
-                    if (lose_win==2'd1) begin
+                    if (player_have_21_point == 1'd1 && lose_win == 2'd3) begin
+                        rgb1_state <= 4'd0; // Rainbow for Blackjack
+                    end else if (lose_win==2'd1) begin
                         rgb1_state <= 4'd7;
                     end else if (lose_win==2'd2) begin
                         rgb1_state <= 4'd8;
@@ -603,62 +628,33 @@ module before_sevenseg(
                             end else begin
                                 rgb1_state <= 4'd6;
                             end
-                            if (!host_card_left_right) begin
-                                if (host_card_0 == 0) begin
-                                    d7 <= BLANK; d6 <= BLANK;
-                                end else begin
-                                    if (host_card_0 / 10) d7 <= host_card_0 / 10; else d7 <= BLANK;
-                                    d6 <= host_card_0 % 10;
-                                end
-                                
-                                if (host_card_1 == 0) begin
-                                    d5 <= BLANK; d4 <= BLANK;
-                                end else begin
-                                    if (host_card_1 / 10) d5 <= host_card_1 / 10; else d5 <= BLANK;
-                                    d4 <= host_card_1 % 10;
-                                end
-                                
-                                if (host_card_2 == 0) begin
-                                    d3 <= BLANK; d2 <= BLANK;
-                                end else begin
-                                    if (host_card_2 / 10) d3 <= host_card_2 / 10; else d3 <= BLANK;
-                                    d2 <= host_card_2 % 10;
-                                end
-                                
-                                if (host_card_3 == 0) begin
-                                    d1 <= BLANK; d0 <= BLANK;
-                                end else begin
-                                    if (host_card_3 / 10) d1 <= host_card_3 / 10; else d1 <= BLANK;
-                                    d0 <= host_card_3 % 10;
-                                end
+                            
+                            if (disp_h0 == 0) begin
+                                d7 <= BLANK; d6 <= BLANK;
                             end else begin
-                                if (host_card_1 == 0) begin
-                                    d7 <= BLANK; d6 <= BLANK;
-                                end else begin
-                                    if (host_card_1 / 10) d7 <= host_card_1 / 10; else d7 <= BLANK;
-                                    d6 <= host_card_1 % 10;
-                                end
-                                
-                                if (host_card_2 == 0) begin
-                                    d5 <= BLANK; d4 <= BLANK;
-                                end else begin
-                                    if (host_card_2 / 10) d5 <= host_card_2 / 10; else d5 <= BLANK;
-                                    d4 <= host_card_2 % 10;
-                                end
-                                
-                                if (host_card_3 == 0) begin
-                                    d3 <= BLANK; d2 <= BLANK;
-                                end else begin
-                                    if (host_card_3 / 10) d3 <= host_card_3 / 10; else d3 <= BLANK;
-                                    d2 <= host_card_3 % 10;
-                                end
-                                
-                                if (host_card_4 == 0) begin
-                                    d1 <= BLANK; d0 <= BLANK;
-                                end else begin
-                                    if (host_card_4 / 10) d1 <= host_card_4 / 10; else d1 <= BLANK;
-                                    d0 <= host_card_4 % 10;
-                                end
+                                if (disp_h0 / 10) d7 <= disp_h0 / 10; else d7 <= BLANK;
+                                d6 <= disp_h0 % 10;
+                            end
+                            
+                            if (disp_h1 == 0) begin
+                                d5 <= BLANK; d4 <= BLANK;
+                            end else begin
+                                if (disp_h1 / 10) d5 <= disp_h1 / 10; else d5 <= BLANK;
+                                d4 <= disp_h1 % 10;
+                            end
+                            
+                            if (disp_h2 == 0) begin
+                                d3 <= BLANK; d2 <= BLANK;
+                            end else begin
+                                if (disp_h2 / 10) d3 <= disp_h2 / 10; else d3 <= BLANK;
+                                d2 <= disp_h2 % 10;
+                            end
+                            
+                            if (disp_h3 == 0) begin
+                                d1 <= BLANK; d0 <= BLANK;
+                            end else begin
+                                if (disp_h3 / 10) d1 <= disp_h3 / 10; else d1 <= BLANK;
+                                d0 <= disp_h3 % 10;
                             end
                         end
                         H_WAIT_BETS: begin

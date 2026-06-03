@@ -7,7 +7,7 @@ module audio_ctl(
 );
 
     // 實例化音效產生器
-    tone_top u_tone_top(
+    tone u_tone(
         .clk(clk),
         .rst_n(rst_n),
         .tone_signal(play_sound),
