@@ -27,6 +27,8 @@ module before_sevenseg(
     input [3:0] host_card_3,
     input [3:0] host_card_4,
     input host_card_left_right,
+    input player_have_21_point,
+    input host_have_21_point,
     output reg [5:0] d0,
     output reg [5:0] d1,
     output reg [5:0] d2,
@@ -35,9 +37,7 @@ module before_sevenseg(
     output reg [5:0] d5,
     output reg [5:0] d6,
     output reg [5:0] d7,
-    output reg rgb1_r = 0,
-    output reg rgb1_g = 0,
-    output reg rgb1_b = 0
+    output reg [3:0] rgb1_state = 4'd6
     );
     localparam BLANK = 6'd34;
     localparam NUM_0 = 6'd0;
@@ -91,6 +91,7 @@ module before_sevenseg(
         case(state)
             TOP_IDLE:
             begin
+                rgb1_state <= 4'd0;
                 d3 <= 6'd23;
                 d2 <= 6'd20;
                 d1 <= 6'd10;
@@ -139,21 +140,14 @@ module before_sevenseg(
                 end
                 end
                 4'd11: begin
-                    rgb1_r <= 0;
-                    rgb1_g <= 0;
-                    rgb1_b <= 0;
                     if (lose_win==2'd1) begin
-                        rgb1_r <= 1;
-                        rgb1_g <= 0;
-                        rgb1_b <= 0;
+                        rgb1_state <= 4'd7;
                     end else if (lose_win==2'd2) begin
-                        rgb1_r <= 1;
-                        rgb1_g <= 1;
-                        rgb1_b <= 0;
+                        rgb1_state <= 4'd8;
                     end else if(lose_win==2'd3) begin
-                        rgb1_r <= 0;
-                        rgb1_g <= 1;
-                        rgb1_b <= 0;
+                        rgb1_state <= 4'd9;
+                    end else begin
+                        rgb1_state <= 4'd6;
                     end
                 if(money_you_have_thousands == 6'd0)
                 begin
@@ -220,23 +214,15 @@ module before_sevenseg(
                 end
                 end
                 4'd9, 4'd12, 4'd13: begin // Settlement states
-                    rgb1_r <= 0;
-                    rgb1_g <= 0;
-                    rgb1_b <= 0;
                     if (lose_win==2'd1) begin
-                        rgb1_r <= 1;
-                        rgb1_g <= 0;
-                        rgb1_b <= 0;
+                        rgb1_state <= 4'd7;
                     end else if (lose_win==2'd2) begin
-                        rgb1_r <= 1;
-                        rgb1_g <= 1;
-                        rgb1_b <= 0;
+                        rgb1_state <= 4'd8;
                     end else if(lose_win==2'd3) begin
-                        rgb1_r <= 0;
-                        rgb1_g <= 1;
-                        rgb1_b <= 0;
+                        rgb1_state <= 4'd9;
+                    end else begin
+                        rgb1_state <= 4'd6;
                     end
-
                     if (lose_win == 2'd1) begin // LOSE
                         d7 <= 6'd20; // L
                         d6 <= NUM_0; // O
@@ -293,6 +279,7 @@ module before_sevenseg(
                     end
                 end
                 4'd1: begin // check_host_ace (DEBUG)
+                    rgb1_state <= 4'd6;
                     d3 <= CHAR_A;
                     d2 <= 6'd12; // C
                     d1 <= 6'd14; // E
@@ -315,9 +302,7 @@ module before_sevenseg(
                     d0 <= BLANK;
                 end
                 4'd5, 4'd15: begin
-                        rgb1_r <= 0;
-                        rgb1_g <= 0;
-                        rgb1_b <= 0;
+                        rgb1_state <= 4'd6;
                     if (card_0 == 0) begin
                         d7 <= BLANK;
                         d6 <= BLANK;
@@ -346,9 +331,7 @@ module before_sevenseg(
                     d0 <= BLANK; 
                 end
                 4'd6: begin
-                        rgb1_r <= 0;
-                        rgb1_g <= 0;
-                        rgb1_b <= 0;
+                        rgb1_state <= 4'd6;
                     if (card_0 == 0) begin
                         d7 <= BLANK;
                         d6 <= BLANK;
@@ -462,6 +445,9 @@ module before_sevenseg(
                 end
                 
                 4'd8: begin
+                    if(player_have_21_point == 1'd1) begin
+                        rgb1_state <= 4'd0;
+                    end
                     if (card_left_right) begin
                         if (card_2 == 0) begin
                         d7 <= BLANK;
@@ -549,6 +535,7 @@ module before_sevenseg(
         end else begin
             case(state)
                 TOP_IDLE: begin
+                        rgb1_state <= 4'd0;
                         d3 <= 6'd17;
                         d2 <= 6'd0;
                         d1 <= 6'd26;
@@ -556,6 +543,7 @@ module before_sevenseg(
                 end
                 
                 TOP_START_HOST: begin
+                    rgb1_state <= 4'd6;
                     d1 <= CHAR_P;
                     case(player_count)
                         3'd0: d0 <= NUM_0;
@@ -582,30 +570,39 @@ module before_sevenseg(
                 TOP_GAME_HOST: begin
                     case(state_h)
                         H_SHUFFLE: begin
+                            rgb1_state <= 4'd6;
                             d3 <= 6'd26; // S
                             d2 <= 6'd17; // H
                             d1 <= 6'd28; // U
                             d0 <= 6'd15; // F
                         end
                         H_HOST_TWO_CARDS: begin
+                            rgb1_state <= 4'd6;
                             d3 <= 6'd17; // H
                             d2 <= 6'd34; // BLANK
                             d1 <= 6'd2;  // 2
                             d0 <= 6'd12; // C
                         end
                         H_PLAYER_TWO_CARDS: begin
+                            rgb1_state <= 4'd6;
                             d3 <= 6'd23; // P
                             d2 <= 6'd34; // BLANK
                             d1 <= 6'd2;  // 2
                             d0 <= 6'd12; // C
                         end
                         H_PLAYER_TURN: begin
+                            rgb1_state <= 4'd6;
                             d3 <= 6'd23; // P
                             d2 <= 6'd20; // L
                             d1 <= 6'd10; // A
                             d0 <= 6'd32; // Y
                         end
                         H_HOST_TURN, H_GAME_OVER: begin
+                            if(host_have_21_point == 1'd1) begin
+                                rgb1_state <= 4'd0;
+                            end else begin
+                                rgb1_state <= 4'd6;
+                            end
                             if (!host_card_left_right) begin
                                 if (host_card_0 == 0) begin
                                     d7 <= BLANK; d6 <= BLANK;
@@ -665,18 +662,21 @@ module before_sevenseg(
                             end
                         end
                         H_WAIT_BETS: begin
+                            rgb1_state <= 4'd6;
                             d3 <= 6'd30; // W
                             d2 <= 6'd10; // A
                             d1 <= 6'd18; // I
                             d0 <= 6'd27; // T
                         end
                         H_WAIT_INSURANCE: begin
+                            rgb1_state <= 4'd6;
                             d3 <= 6'd26; // S
                             d2 <= 6'd10; // A
                             d1 <= 6'd15; // F
                             d0 <= 6'd14; // E
                         end
                         default: begin
+                            rgb1_state <= 4'd6;
                             d3 <= 6'd34;
                             d2 <= 6'd34;
                             d1 <= 6'd34;

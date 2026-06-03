@@ -185,6 +185,9 @@ module start_ui_top(
     wire [3:0] host_card_3;
     wire [3:0] host_card_4;
     wire host_card_left_right;
+    wire [3:0] rgb1_state;
+    wire player_have_21_point;
+    wire host_have_21_point;
     start_ui_host startui_h(
         .clk(sys_clk),
         .rst_n(sys_rst_n),
@@ -212,7 +215,8 @@ module start_ui_top(
         .host_card_2(host_card_2),
         .host_card_3(host_card_3),
         .host_card_4(host_card_4),
-        .host_card_left_right(host_card_left_right)
+        .host_card_left_right(host_card_left_right),
+        .host_have_21_point(host_have_21_point)
     );
     game_player game_player(
         .clk(sys_clk),
@@ -244,7 +248,8 @@ module start_ui_top(
         .money_you_bet_thousands(money_you_bet_thousands),    
         .money_you_bet_hundreds(money_you_bet_hundreds),
         .money_you_bet_tens(money_you_bet_tens),
-        .money_you_bet_ones(money_you_bet_ones)
+        .money_you_bet_ones(money_you_bet_ones),
+        .player_have_21_point(player_have_21_point)
     );
     before_sevenseg segchoser(
         .state(state),
@@ -274,6 +279,8 @@ module start_ui_top(
         .host_card_3(host_card_3),
         .host_card_4(host_card_4),
         .host_card_left_right(host_card_left_right),
+        .player_have_21_point(player_have_21_point),
+        .host_have_21_point(host_have_21_point),
         .card_left_right(card_left_right),
         .d0(d0),
         .d1(d1),
@@ -283,9 +290,14 @@ module start_ui_top(
         .d5(d5),
         .d6(d6),
         .d7(d7),
+        .rgb1_state(rgb1_state)
+    );
+    color_fsm rgb1(
+        .slow_clk(clk_slow),
+        .rgb1_state(rgb1_state),
         .rgb1_r(rgb1_r),
         .rgb1_g(rgb1_g),
-        .rgb1_b(rgb1_b)
+        .rgb1_b(rgb1_b)   
     );
     segment_decoder segdecoder(
         .clk(clk_scan),

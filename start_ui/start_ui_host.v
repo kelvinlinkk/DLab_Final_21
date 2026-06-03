@@ -28,7 +28,8 @@ module start_ui_host (
     output [3:0] host_card_2,
     output [3:0] host_card_3,
     output [3:0] host_card_4,
-    output reg host_card_left_right = 0
+    output reg host_card_left_right = 0,
+    output reg host_have_21_point = 1'd0
 );
 
     localparam S_IDLE              = 4'd0;
@@ -150,6 +151,7 @@ module start_ui_host (
             rx_reg_3         <= 8'b0;
             rx_reg_4         <= 8'b0;
             host_card_left_right <= 1'b0;
+            host_have_21_point <= 1'd0;
 
             for (k = 0; k < 9; k = k + 1) begin
                 cards[k]     <= 4'd0;
@@ -455,6 +457,9 @@ module start_ui_host (
                 end
 
                 S_GAME_OVER: begin
+                    if (host_total_score == 5'd21) begin
+                        host_have_21_point <= 1'd1;
+                    end
                     if (btnC_pulse) begin
                         state_h <= S_SEND_RESTART;
                     end else if (!tx_busy_1 && !tx_valid_1 && !tx_busy_2 && !tx_valid_2 && !tx_busy_3 && !tx_valid_3 && !tx_busy_4 && !tx_valid_4) begin
@@ -475,6 +480,7 @@ module start_ui_host (
                 
                 S_SEND_RESTART: begin
                     pull_reg <= 1'b0;
+                    host_have_21_point <= 1'd0;
                     if (!tx_busy_1 && !tx_valid_1 && !tx_busy_2 && !tx_valid_2 && !tx_busy_3 && !tx_valid_3 && !tx_busy_4 && !tx_valid_4) begin
                         tx_reg_1   <= 8'b11111111;
                         tx_reg_2   <= 8'b11111111;

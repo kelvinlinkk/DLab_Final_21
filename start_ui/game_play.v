@@ -28,7 +28,8 @@ module game_player(
     output [5:0] money_you_bet_thousands,    
     output [5:0] money_you_bet_hundreds,
     output [5:0] money_you_bet_tens,
-    output [5:0] money_you_bet_ones
+    output [5:0] money_you_bet_ones,
+    output reg player_have_21_point = 1'd0
   );
   // states
   localparam wait_start = 4'd0;
@@ -146,6 +147,7 @@ module game_player(
       insurance_yn    <= 1'd0;
       lose_win <= 2'd0;
       double_in <= 1'd0;
+      player_have_21_point <= 1'd0;
     end
     else
     begin
@@ -207,6 +209,7 @@ module game_player(
         host_card <= 5'd0;
         host_ace_reg <= 1'b0;
         card_left_right <= 1'd0;
+        player_have_21_point <= 1'd0;
         state <= check_host_ace;
       end
       check_host_ace:
@@ -369,6 +372,9 @@ module game_player(
       wait_host:
       begin
         tx<={3'b100, player_sum[4:0]}; // 已填入實際手牌總和
+        if(player_sum == 6'd21) begin
+        player_have_21_point <= 1'd1;
+        end
         if(btnL)
         begin
         card_left_right <= 1'd0;
