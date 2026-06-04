@@ -13,7 +13,6 @@ module rx(
     reg [3:0] state;
     reg [7:0] data_reg;
 
-    // 兩級暫存器消除亞穩態 (Metastability)，確保外部訊號進 FPGA 內部不會出錯
     reg rx_d1, rx_d2;
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -39,14 +38,14 @@ module rx(
             valid <= 1'b0;
             case (state)
                 IDLE: begin
-                    if (rx_d2 == 1'b0) begin // 偵測到線路被拉低 (Start bit)
+                    if (rx_d2 == 1'b0) begin 
                         state <= START;
                         baud_cnt <= 0;
                     end
                 end
                 START: begin
                     if (baud_cnt == HALF_BAUD) begin
-                        if (rx_d2 == 1'b0) begin // 數到一半再次確認真的是 Start bit (濾除雜訊)
+                        if (rx_d2 == 1'b0) begin 
                             state <= D0;
                             baud_cnt <= 0;
                         end else begin
