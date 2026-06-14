@@ -20,7 +20,7 @@ module start_ui_host (
 
     output reg backtogh_h = 0,
     output reg [3:0] state_h,
-    output reg [2:0] player_count = 3'd1,
+    output reg [2:0] player_count = 3'd0,
     output reg [1:0] ai_level = 2'd1,
     
     output [3:0] host_card_0,
@@ -135,7 +135,7 @@ module start_ui_host (
         if (!rst_n) begin
             state_h          <= S_IDLE;
             backtogh_h       <= 1'b0;
-            player_count     <= 3'd1;
+            player_count     <= 3'd0;
             ai_level         <= 2'd1;
             
             shuffle_reg      <= 1'b0;
@@ -187,7 +187,7 @@ module start_ui_host (
 
                 S_PLAYER: begin
                     if (btnU) begin
-                        if (player_count == 3'd4) player_count <= 3'd1;
+                        if (player_count == 3'd4) player_count <= 3'd0;
                         else player_count <= player_count + 3'd1;
                     end
                     if (btnC) begin
@@ -199,7 +199,7 @@ module start_ui_host (
                         end
                     end
                     if (btnD) begin
-                        if (player_count == 3'd1) player_count <= 3'd4;
+                        if (player_count == 3'd0) player_count <= 3'd4;
                         else player_count <= player_count - 3'd1;
                     end
                     if (btnR) begin
